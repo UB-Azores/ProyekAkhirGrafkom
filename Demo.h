@@ -14,27 +14,7 @@ public:
 	Demo();
 	~Demo();
 private:
-	GLuint shaderProgram,
-	//Plane
-	texture1, VBO1, VAO1, EBO1,
-
-	//Pedestrian
-	texture2, VBO2, VAO2, EBO2, VBO3, VAO3, EBO3, VBO4, VAO4, EBO4, VBO5, VAO5, EBO5,
-
-	//Windmill
-	texture3, texture4, texture5, texture8, VBO6, VAO6, EBO6, VBO7, VAO7, EBO7, VBO8, VAO8, EBO8, VBO11, VAO11, EBO11,
-
-	//Lamp
-	texture6, VBO9, VAO9, EBO9,
-		
-	//Hedge	
-	texture7, VBO10, VAO10, EBO10,
-		
-	//Tree
-	texture9, texture10, texture11, texture12, VBO12, VAO12, EBO12, VBO13, VAO13, EBO13, VBO14, VAO14, EBO14, VBO15, VAO15, EBO15,
-		
-	//Road
-	texture13, texture14, VBO16, VAO16, EBO16, VBO17, VAO17, EBO17;
+	GLuint shaderProgram, VBO_default, VAO_default, EBO_default;
 
 	float angle = 0;
 	virtual void Init();
@@ -42,13 +22,17 @@ private:
 	virtual void Update(double deltaTime);
 	virtual void Render();
 	virtual void ProcessInput(GLFWwindow *window);
-	
+
 	// Plane Things
+	GLuint texture_plane, VBO_plane, VAO_plane, EBO_plane;
+
 	void BuildColoredPlane();
 	void DrawColoredPlane();
 
 	// Pedestrian Things (1-2 png boy) (3-4 jpg) (5-7 png)
-	std::string skinType = "skin1.png";
+	std::string skinType = "skin5.png";
+	GLuint texture_pedestrian, VBO_head, VAO_head, EBO_head, VBO_body, VAO_body, EBO_body, VBO_hand, VAO_hand, EBO_hand, VBO_leg, VAO_leg, EBO_leg;
+
 	void BuildBody();
 	void BuildLeg();
 	void BuildHand();
@@ -58,8 +42,12 @@ private:
 	void DrawHand(int rotate, double positionX, double positionY, double positionZ);
 	void DrawHead();
 
-	/*
 	// Windmill Things
+	GLuint	texture_foundation, VBO_foundation, VAO_foundation, EBO_foundation,
+			texture_center,
+			texture_pinwheel,
+			texture_propeller, VBO_propeller, VAO_propeller, EBO_propeller;
+
 	void BuildFoundation();
 	void BuildPinwheel();
 	void BuildCenter();
@@ -69,15 +57,23 @@ private:
 	void DrawPinwheel(int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 	void DrawPropeller(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
+	/*
 	// Lamp Things
+	GLuint texture_lamp;
+
 	void BuildLamp();
 	void DrawLamp(double positionX, double positionY, double positionZ);
 
 	// Hedge Things
+	GLuint texture_hedge, VBO_hedge, VAO_hedge, EBO_hedge;
+
 	void BuildHedge();
 	void DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Tree Things
+	GLuint	texture_darkOak, texture_birch, VBO_tree, VAO_tree, EBO_tree,
+			texture_darkLeaf, texture_birchLeaf, VBO_leaf, VAO_leaf, EBO_leaf;
+
 	void BuildDarkOak();
 	void BuildBirch();
 	void BuildDarkLeaf();
@@ -88,6 +84,8 @@ private:
 	void DrawBirchLeaf(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Road Things
+	GLuint texture_cobble, texture_stone, VBO_road, VAO_road, EBO_road;
+
 	void BuildCobble();
 	void BuildStone();
 	void DrawCobble(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);

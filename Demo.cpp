@@ -21,13 +21,13 @@ void Demo::Init() {
 	BuildHand();
 	BuildLeg();
 
-	/*
 	// Windmill
 	BuildFoundation();
 	BuildCenter();
 	BuildPinwheel();
 	BuildPropeller();
 
+	/*
 	// Lamp
 	BuildLamp();
 
@@ -50,58 +50,49 @@ void Demo::Init() {
 void Demo::DeInit() {
 	// optional: de-allocate all resources once they've outlived their purpose:
 	// ------------------------------------------------------------------------
-	glDeleteVertexArrays(1, &VAO1);
-	glDeleteBuffers(1, &VBO1);
-	glDeleteBuffers(1, &EBO1);
-	glDeleteVertexArrays(1, &VAO2);
-	glDeleteBuffers(1, &VBO2);
-	glDeleteBuffers(1, &EBO2);
-	glDeleteVertexArrays(1, &VAO3);
-	glDeleteBuffers(1, &VBO3);
-	glDeleteBuffers(1, &EBO3);
-	glDeleteVertexArrays(1, &VAO4);
-	glDeleteBuffers(1, &VBO4);
-	glDeleteBuffers(1, &EBO4);
-	glDeleteVertexArrays(1, &VAO5);
-	glDeleteBuffers(1, &VBO5);
-	glDeleteBuffers(1, &EBO5);
+	glDeleteVertexArrays(1, &VAO_default);
+	glDeleteBuffers(1, &VBO_default);
+	glDeleteBuffers(1, &EBO_default);
+
+	glDeleteVertexArrays(1, &VAO_plane);
+	glDeleteBuffers(1, &VBO_plane);
+	glDeleteBuffers(1, &EBO_plane);
+
+	glDeleteVertexArrays(1, &VAO_head);
+	glDeleteBuffers(1, &VBO_head);
+	glDeleteBuffers(1, &EBO_head);
+	glDeleteVertexArrays(1, &VAO_body);
+	glDeleteBuffers(1, &VBO_body);
+	glDeleteBuffers(1, &EBO_body);
+	glDeleteVertexArrays(1, &VAO_hand);
+	glDeleteBuffers(1, &VBO_hand);
+	glDeleteBuffers(1, &EBO_hand);
+	glDeleteVertexArrays(1, &VAO_leg);
+	glDeleteBuffers(1, &VBO_leg);
+	glDeleteBuffers(1, &EBO_leg);
+	
+	glDeleteVertexArrays(1, &VAO_foundation);
+	glDeleteBuffers(1, &VBO_foundation);
+	glDeleteBuffers(1, &EBO_foundation);
+	glDeleteVertexArrays(1, &VAO_propeller);
+	glDeleteBuffers(1, &VBO_propeller);
+	glDeleteBuffers(1, &EBO_propeller);
+
 	/*
-	glDeleteVertexArrays(1, &VAO6);
-	glDeleteBuffers(1, &VBO6);
-	glDeleteBuffers(1, &EBO6);
-	glDeleteVertexArrays(1, &VAO7);
-	glDeleteBuffers(1, &VBO7);
-	glDeleteBuffers(1, &EBO7);
-	glDeleteVertexArrays(1, &VAO8);
-	glDeleteBuffers(1, &VBO8);
-	glDeleteBuffers(1, &EBO8);
-	glDeleteVertexArrays(1, &VAO9);
-	glDeleteBuffers(1, &VBO9);
-	glDeleteBuffers(1, &EBO9);
-	glDeleteVertexArrays(1, &VAO10);
-	glDeleteBuffers(1, &VBO10);
-	glDeleteBuffers(1, &EBO10);
-	glDeleteVertexArrays(1, &VAO11);
-	glDeleteBuffers(1, &VBO11);
-	glDeleteBuffers(1, &EBO11);
-	glDeleteVertexArrays(1, &VAO12);
-	glDeleteBuffers(1, &VBO12);
-	glDeleteBuffers(1, &EBO12);
-	glDeleteVertexArrays(1, &VAO13);
-	glDeleteBuffers(1, &VBO13);
-	glDeleteBuffers(1, &EBO13);
-	glDeleteVertexArrays(1, &VAO14);
-	glDeleteBuffers(1, &VBO14);
-	glDeleteBuffers(1, &EBO14);
-	glDeleteVertexArrays(1, &VAO15);
-	glDeleteBuffers(1, &VBO15);
-	glDeleteBuffers(1, &EBO15);
-	glDeleteVertexArrays(1, &VAO16);
-	glDeleteBuffers(1, &VBO16);
-	glDeleteBuffers(1, &EBO16);
-	glDeleteVertexArrays(1, &VAO17);
-	glDeleteBuffers(1, &VBO17);
-	glDeleteBuffers(1, &EBO17);
+	glDeleteVertexArrays(1, &VAO_hedge);
+	glDeleteBuffers(1, &VBO_hedge);
+	glDeleteBuffers(1, &EBO_hedge);
+
+	glDeleteVertexArrays(1, &VAO_tree);
+	glDeleteBuffers(1, &VBO_tree);
+	glDeleteBuffers(1, &EBO_tree);
+	glDeleteVertexArrays(1, &VAO_leaf);
+	glDeleteBuffers(1, &VBO_leaf);
+	glDeleteBuffers(1, &EBO_leaf);
+
+	glDeleteVertexArrays(1, &VAO_road);
+	glDeleteBuffers(1, &VBO_road);
+	glDeleteBuffers(1, &EBO_road);
 	/**/
 }
 
@@ -213,8 +204,16 @@ void Demo::Render() {
 	GLint viewLoc = glGetUniformLocation(this->shaderProgram, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-	// Set Lighting Attribute
-	//GLint lightPosLoc = glGetUniormLocation(this->)
+	// Set lighting attribute
+	GLint lightPosLoc = glGetUniformLocation(this->shaderProgram, "lightPos");
+	glUniform3f(lightPosLoc, 0, 1, 0);
+	GLint viewPosLoc = glGetUniformLocation(this->shaderProgram, "viewPos");
+	glUniform3f(viewPosLoc, 0, 2, 3);
+	GLint lightColorLoc = glGetUniformLocation(this->shaderProgram, "lightColor");
+	glUniform3f(lightColorLoc, 1.0f, 1.0f, 1.0f);
+
+	// Plane
+	DrawColoredPlane();
 
 	// Pedestrian
 	DrawHead();
@@ -224,9 +223,15 @@ void Demo::Render() {
 	DrawLeg(1, -0.5, 1, 0);
 	DrawLeg(2, 0.5, 1, 0);
 
-	/*
 	// Windmill
 	DrawFoundation();
+
+	DrawCenter(0, 25, 39, 1, 1, 5);
+	DrawCenter(0, 25, 36.5, 1.5, 1.5, 1.5);
+	DrawPinwheel(1, 0, 25, 36.5, 30, 2, 0.1);
+	DrawPinwheel(1, 0, 25, 36.5, 2, 30, 0.1);
+	DrawPropeller(0, 25, 37.5, 32, 4, 0.1);
+	DrawPropeller(0, 25, 37.5, 4, 32, 0.1);
 
 	DrawCenter(0, 10, 37.7, 5, 7.5, 0.5);
 	DrawPinwheel(0, 0, 13.5, 37.5, 5, 0.5, 0.5);
@@ -236,13 +241,7 @@ void Demo::Render() {
 	DrawPinwheel(0, 0, 10, 37.5, 0.5, 7.5, 0.5);
 	DrawPinwheel(0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
 
-	DrawCenter(0, 25, 39, 1, 1, 5);
-	DrawCenter(0, 25, 36.5, 1.5, 1.5, 1.5);
-	DrawPinwheel(1, 0, 25, 36.5, 30, 2, 0.1);
-	DrawPinwheel(1, 0, 25, 36.5, 2, 30, 0.1);
-	DrawPropeller(0, 25, 37.5, 32, 4, 0.1);
-	DrawPropeller(0, 25, 37.5, 4, 32, 0.1);
-
+	/*
 	// Lamp
 	const int totalLamp = 2;
 	double lampX[totalLamp] = {};
@@ -330,9 +329,6 @@ void Demo::Render() {
 	DrawStone(-3, -0.5, 0, 3, 0.1, 20);
 	/**/
 
-	// Plane
-	DrawColoredPlane();
-
 	glDisable(GL_DEPTH_TEST);
 }
 
@@ -340,8 +336,8 @@ void Demo::Render() {
 void Demo::BuildColoredPlane()
 {
 	// Load and create a texture 
-	glGenTextures(1, &texture1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glGenTextures(1, &texture_plane);
+	glBindTexture(GL_TEXTURE_2D, texture_plane);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
@@ -366,16 +362,16 @@ void Demo::BuildColoredPlane()
 
 	GLuint indices[] = { 0,  2,  1,  0,  3,  2 };
 
-	glGenVertexArrays(1, &VAO1);
-	glGenBuffers(1, &VBO1);
-	glGenBuffers(1, &EBO1);
+	glGenVertexArrays(1, &VAO_plane);
+	glGenBuffers(1, &VBO_plane);
+	glGenBuffers(1, &EBO_plane);
 
-	glBindVertexArray(VAO1);
+	glBindVertexArray(VAO_plane);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO1);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_plane);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_plane);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// Position attribute
@@ -392,10 +388,10 @@ void Demo::DrawColoredPlane()
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glBindTexture(GL_TEXTURE_2D, texture_plane);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 1);
 
-	glBindVertexArray(VAO1); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_plane); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
@@ -412,8 +408,8 @@ void Demo::BuildHead() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glGenTextures(1, &texture_pedestrian);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -472,16 +468,16 @@ void Demo::BuildHead() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO2);
-	glGenBuffers(1, &VBO2);
-	glGenBuffers(1, &EBO2);
+	glGenVertexArrays(1, &VAO_head);
+	glGenBuffers(1, &VBO_head);
+	glGenBuffers(1, &EBO_head);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO2);
+	glBindVertexArray(VAO_head);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO2);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_head);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_head);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -508,10 +504,10 @@ void Demo::DrawHead()
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO2); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_head); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -534,8 +530,8 @@ void Demo::BuildBody() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glGenTextures(1, &texture_pedestrian);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -594,16 +590,16 @@ void Demo::BuildBody() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO3);
-	glGenBuffers(1, &VBO3);
-	glGenBuffers(1, &EBO3);
+	glGenVertexArrays(1, &VAO_body);
+	glGenBuffers(1, &VBO_body);
+	glGenBuffers(1, &EBO_body);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO3);
+	glBindVertexArray(VAO_body);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO3);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_body);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO3);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_body);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -630,10 +626,10 @@ void Demo::DrawBody()
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO3); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_body); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -656,8 +652,8 @@ void Demo::BuildHand() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glGenTextures(1, &texture_pedestrian);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -716,16 +712,16 @@ void Demo::BuildHand() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO4);
-	glGenBuffers(1, &VBO4);
-	glGenBuffers(1, &EBO4);
+	glGenVertexArrays(1, &VAO_hand);
+	glGenBuffers(1, &VBO_hand);
+	glGenBuffers(1, &EBO_hand);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO4);
+	glBindVertexArray(VAO_hand);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO4);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_hand);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO4);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_hand);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -752,10 +748,10 @@ void Demo::DrawHand(int rotate, double positionX, double positionY, double posit
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO4); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_hand); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -789,8 +785,8 @@ void Demo::BuildLeg() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glGenTextures(1, &texture_pedestrian);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -849,16 +845,16 @@ void Demo::BuildLeg() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO5);
-	glGenBuffers(1, &VBO5);
-	glGenBuffers(1, &EBO5);
+	glGenVertexArrays(1, &VAO_leg);
+	glGenBuffers(1, &VBO_leg);
+	glGenBuffers(1, &EBO_leg);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO5);
+	glBindVertexArray(VAO_leg);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO5);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_leg);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO5);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_leg);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -885,10 +881,10 @@ void Demo::DrawLeg(int rotate, double positionX, double positionY, double positi
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture2);
+	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO5); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_leg); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -918,14 +914,13 @@ void Demo::DrawLeg(int rotate, double positionX, double positionY, double positi
 	glBindVertexArray(0);
 }
 
-/*
 // Windmill Things
 void Demo::BuildFoundation() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture3);
-	glBindTexture(GL_TEXTURE_2D, texture3);
+	glGenTextures(1, &texture_foundation);
+	glBindTexture(GL_TEXTURE_2D, texture_foundation);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -984,16 +979,16 @@ void Demo::BuildFoundation() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO6);
-	glGenBuffers(1, &VBO6);
-	glGenBuffers(1, &EBO6);
+	glGenVertexArrays(1, &VAO_foundation);
+	glGenBuffers(1, &VBO_foundation);
+	glGenBuffers(1, &EBO_foundation);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO6);
+	glBindVertexArray(VAO_foundation);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO6);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_foundation);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO6);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_foundation);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1020,16 +1015,16 @@ void Demo::DrawFoundation()
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture3);
+	glBindTexture(GL_TEXTURE_2D, texture_foundation);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO6); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_foundation); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
-	model = glm::translate(model, glm::vec3(0, 0, 50));
+	model = glm::translate(model, glm::vec3(0, 19, 54));
 
-	model = glm::scale(model, glm::vec3(20, 30, 20));
+	model = glm::scale(model, glm::vec3(20, 20, 20));
 
 	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -1044,8 +1039,8 @@ void Demo::BuildCenter() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture4);
-	glBindTexture(GL_TEXTURE_2D, texture4);
+	glGenTextures(1, &texture_center);
+	glBindTexture(GL_TEXTURE_2D, texture_center);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1104,16 +1099,16 @@ void Demo::BuildCenter() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO7);
-	glGenBuffers(1, &VBO7);
-	glGenBuffers(1, &EBO7);
+	glGenVertexArrays(1, &VAO_default);
+	glGenBuffers(1, &VBO_default);
+	glGenBuffers(1, &EBO_default);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO7);
+	glBindVertexArray(VAO_default);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO7);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_default);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO7);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_default);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1140,10 +1135,10 @@ void Demo::DrawCenter(double positionX, double positionY, double positionZ, doub
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture4);
+	glBindTexture(GL_TEXTURE_2D, texture_center);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO7); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1164,8 +1159,8 @@ void Demo::BuildPinwheel() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture5);
-	glBindTexture(GL_TEXTURE_2D, texture5);
+	glGenTextures(1, &texture_pinwheel);
+	glBindTexture(GL_TEXTURE_2D, texture_pinwheel);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1224,16 +1219,16 @@ void Demo::BuildPinwheel() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO8);
-	glGenBuffers(1, &VBO8);
-	glGenBuffers(1, &EBO8);
+	glGenVertexArrays(1, &VAO_default);
+	glGenBuffers(1, &VBO_default);
+	glGenBuffers(1, &EBO_default);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO8);
+	glBindVertexArray(VAO_default);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO8);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_default);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO8);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_default);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1260,10 +1255,10 @@ void Demo::DrawPinwheel(int rotate, double positionX, double positionY, double p
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture5);
+	glBindTexture(GL_TEXTURE_2D, texture_pinwheel);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO8); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1288,8 +1283,8 @@ void Demo::BuildPropeller() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture8);
-	glBindTexture(GL_TEXTURE_2D, texture8);
+	glGenTextures(1, &texture_propeller);
+	glBindTexture(GL_TEXTURE_2D, texture_propeller);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1348,16 +1343,16 @@ void Demo::BuildPropeller() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO11);
-	glGenBuffers(1, &VBO11);
-	glGenBuffers(1, &EBO11);
+	glGenVertexArrays(1, &VAO_propeller);
+	glGenBuffers(1, &VBO_propeller);
+	glGenBuffers(1, &EBO_propeller);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO11);
+	glBindVertexArray(VAO_propeller);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO11);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_propeller);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO11);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_propeller);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1384,10 +1379,10 @@ void Demo::DrawPropeller(double positionX, double positionY, double positionZ, d
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture8);
+	glBindTexture(GL_TEXTURE_2D, texture_propeller);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO11); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_propeller); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1406,13 +1401,14 @@ void Demo::DrawPropeller(double positionX, double positionY, double positionZ, d
 	glBindVertexArray(0);
 }
 
+/*
 // Lamp Things
 void Demo::BuildLamp() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture6);
-	glBindTexture(GL_TEXTURE_2D, texture6);
+	glGenTextures(1, &texture_lamp);
+	glBindTexture(GL_TEXTURE_2D, texture_lamp);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1471,16 +1467,16 @@ void Demo::BuildLamp() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO9);
-	glGenBuffers(1, &VBO9);
-	glGenBuffers(1, &EBO9);
+	glGenVertexArrays(1, &VAO_default);
+	glGenBuffers(1, &VBO_default);
+	glGenBuffers(1, &EBO_default);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO9);
+	glBindVertexArray(VAO_default);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO9);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_default);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO9);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_default);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1507,10 +1503,10 @@ void Demo::DrawLamp(double positionX, double positionY, double positionZ)
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture6);
+	glBindTexture(GL_TEXTURE_2D, texture_lamp);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO9); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1532,8 +1528,8 @@ void Demo::BuildHedge() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture7);
-	glBindTexture(GL_TEXTURE_2D, texture7);
+	glGenTextures(1, &texture_hedge);
+	glBindTexture(GL_TEXTURE_2D, texture_hedge);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1592,16 +1588,16 @@ void Demo::BuildHedge() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO10);
-	glGenBuffers(1, &VBO10);
-	glGenBuffers(1, &EBO10);
+	glGenVertexArrays(1, &VAO_hedge);
+	glGenBuffers(1, &VBO_hedge);
+	glGenBuffers(1, &EBO_hedge);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO10);
+	glBindVertexArray(VAO_hedge);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO10);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_hedge);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO10);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_hedge);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1628,10 +1624,10 @@ void Demo::DrawHedge(double positionX, double positionY, double positionZ, doubl
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture7);
+	glBindTexture(GL_TEXTURE_2D, texture_hedge);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO10); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_hedge); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1653,8 +1649,8 @@ void Demo::BuildDarkOak() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture9);
-	glBindTexture(GL_TEXTURE_2D, texture9);
+	glGenTextures(1, &texture_darkOak);
+	glBindTexture(GL_TEXTURE_2D, texture_darkOak);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1701,16 +1697,16 @@ void Demo::BuildDarkOak() {
 		12, 14, 13, 12, 15, 14
 	};
 
-	glGenVertexArrays(1, &VAO12);
-	glGenBuffers(1, &VBO12);
-	glGenBuffers(1, &EBO12);
+	glGenVertexArrays(1, &VAO_tree);
+	glGenBuffers(1, &VBO_tree);
+	glGenBuffers(1, &EBO_tree);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO12);
+	glBindVertexArray(VAO_tree);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO12);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_tree);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO12);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tree);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1737,10 +1733,10 @@ void Demo::DrawDarkOak(double positionX, double positionY, double positionZ, dou
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture9);
+	glBindTexture(GL_TEXTURE_2D, texture_darkOak);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO12); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_tree); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1761,8 +1757,8 @@ void Demo::BuildBirch() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture10);
-	glBindTexture(GL_TEXTURE_2D, texture10);
+	glGenTextures(1, &texture_birch);
+	glBindTexture(GL_TEXTURE_2D, texture_birch);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1809,16 +1805,16 @@ void Demo::BuildBirch() {
 		12, 14, 13, 12, 15, 14
 	};
 
-	glGenVertexArrays(1, &VAO13);
-	glGenBuffers(1, &VBO13);
-	glGenBuffers(1, &EBO13);
+	glGenVertexArrays(1, &VAO_tree);
+	glGenBuffers(1, &VBO_tree);
+	glGenBuffers(1, &EBO_tree);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO13);
+	glBindVertexArray(VAO_tree);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO13);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_tree);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO13);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tree);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1845,10 +1841,10 @@ void Demo::DrawBirch(double positionX, double positionY, double positionZ, doubl
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture10);
+	glBindTexture(GL_TEXTURE_2D, texture_birch);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO13); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_tree); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1869,8 +1865,8 @@ void Demo::BuildDarkLeaf() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture11);
-	glBindTexture(GL_TEXTURE_2D, texture11);
+	glGenTextures(1, &texture_darkLeaf);
+	glBindTexture(GL_TEXTURE_2D, texture_darkLeaf);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -1929,16 +1925,16 @@ void Demo::BuildDarkLeaf() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO14);
-	glGenBuffers(1, &VBO14);
-	glGenBuffers(1, &EBO14);
+	glGenVertexArrays(1, &VAO_leaf);
+	glGenBuffers(1, &VBO_leaf);
+	glGenBuffers(1, &EBO_leaf);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO14);
+	glBindVertexArray(VAO_leaf);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO14);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_leaf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO14);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_leaf);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -1965,10 +1961,10 @@ void Demo::DrawDarkLeaf(double positionX, double positionY, double positionZ, do
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture11);
+	glBindTexture(GL_TEXTURE_2D, texture_darkLeaf);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO14); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_leaf); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -1989,8 +1985,8 @@ void Demo::BuildBirchLeaf() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture12);
-	glBindTexture(GL_TEXTURE_2D, texture12);
+	glGenTextures(1, &texture_birchLeaf);
+	glBindTexture(GL_TEXTURE_2D, texture_birchLeaf);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -2005,39 +2001,39 @@ void Demo::BuildBirchLeaf() {
 		// format position, tex coords
 		// front
 		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 1, 0,   // 1
-		0.5,  0.5, 0.5, 1, 1,   // 2
+		0.5, -0.5, 0.5, 5, 0,   // 1
+		0.5,  0.5, 0.5, 5, 1,   // 2
 		-0.5,  0.5, 0.5, 0, 1,  // 3
 
 		// right
 		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 1, 0,  // 5
-		0.5, -0.5, -0.5, 1, 1,  // 6
+		0.5,  0.5, -0.5, 5, 0,  // 5
+		0.5, -0.5, -0.5, 5, 1,  // 6
 		0.5, -0.5,  0.5, 0, 1,  // 7
 
 		// back
 		-0.5, -0.5, -0.5, 0, 0, // 8 
-		0.5,  -0.5, -0.5, 1, 0, // 9
-		0.5,   0.5, -0.5, 1, 1, // 10
+		0.5,  -0.5, -0.5, 5, 0, // 9
+		0.5,   0.5, -0.5, 5, 1, // 10
 		-0.5,  0.5, -0.5, 0, 1, // 11
 
 		// left
 		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 1, 0, // 13
-		-0.5,  0.5,  0.5, 1, 1, // 14
+		-0.5, -0.5,  0.5, 5, 0, // 13
+		-0.5,  0.5,  0.5, 5, 1, // 14
 		-0.5,  0.5, -0.5, 0, 1, // 15
 
 		// upper
 		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 1, 0,  // 17
-		-0.5, 0.5, -0.5, 1, 1,  // 18
-		0.5, 0.5, -0.5, 0, 1,   // 19
+		-0.5, 0.5,  0.5, 5, 0,  // 17
+		-0.5, 0.5, -0.5, 5, 5,  // 18
+		0.5, 0.5, -0.5, 0, 5,   // 19
 
 		// bottom
 		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 1, 0,  // 21
-		0.5, -0.5,  0.5, 1, 1,  // 22
-		-0.5, -0.5,  0.5, 0, 1, // 23
+		0.5, -0.5, -0.5, 5, 0,  // 21
+		0.5, -0.5,  0.5, 5, 5,  // 22
+		-0.5, -0.5,  0.5, 0, 5, // 23
 	};
 
 	unsigned int indices[] = {
@@ -2049,16 +2045,16 @@ void Demo::BuildBirchLeaf() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO15);
-	glGenBuffers(1, &VBO15);
-	glGenBuffers(1, &EBO15);
+	glGenVertexArrays(1, &VAO_leaf);
+	glGenBuffers(1, &VBO_leaf);
+	glGenBuffers(1, &EBO_leaf);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO15);
+	glBindVertexArray(VAO_leaf);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO15);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_leaf);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO15);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_leaf);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -2085,10 +2081,10 @@ void Demo::DrawBirchLeaf(double positionX, double positionY, double positionZ, d
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture12);
+	glBindTexture(GL_TEXTURE_2D, texture_birchLeaf);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO14); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_leaf); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -2110,8 +2106,8 @@ void Demo::BuildCobble() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture13);
-	glBindTexture(GL_TEXTURE_2D, texture13);
+	glGenTextures(1, &texture_cobble);
+	glBindTexture(GL_TEXTURE_2D, texture_cobble);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -2170,16 +2166,16 @@ void Demo::BuildCobble() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO16);
-	glGenBuffers(1, &VBO16);
-	glGenBuffers(1, &EBO16);
+	glGenVertexArrays(1, &VAO_road);
+	glGenBuffers(1, &VBO_road);
+	glGenBuffers(1, &EBO_road);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO16);
+	glBindVertexArray(VAO_road);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO16);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_road);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO16);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_road);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -2206,10 +2202,10 @@ void Demo::DrawCobble(double positionX, double positionY, double positionZ, doub
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture13);
+	glBindTexture(GL_TEXTURE_2D, texture_cobble);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO16); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_road); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -2230,8 +2226,8 @@ void Demo::BuildStone() {
 	// load image into texture memory
 	// ------------------------------
 	// Load and create a texture 
-	glGenTextures(1, &texture14);
-	glBindTexture(GL_TEXTURE_2D, texture14);
+	glGenTextures(1, &texture_stone);
+	glBindTexture(GL_TEXTURE_2D, texture_stone);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	int width, height;
@@ -2290,16 +2286,16 @@ void Demo::BuildStone() {
 		20, 22, 21, 20, 23, 22   // bottom
 	};
 
-	glGenVertexArrays(1, &VAO17);
-	glGenBuffers(1, &VBO17);
-	glGenBuffers(1, &EBO17);
+	glGenVertexArrays(1, &VAO_road);
+	glGenBuffers(1, &VBO_road);
+	glGenBuffers(1, &EBO_road);
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO17);
+	glBindVertexArray(VAO_road);
 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO17);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_road);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO17);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_road);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	// define position pointer layout 0
@@ -2326,10 +2322,10 @@ void Demo::DrawStone(double positionX, double positionY, double positionZ, doubl
 	glUseProgram(shaderProgram);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture14);
+	glBindTexture(GL_TEXTURE_2D, texture_stone);
 	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
 
-	glBindVertexArray(VAO17); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+	glBindVertexArray(VAO_road); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
 
@@ -2351,7 +2347,7 @@ void Demo::DrawStone(double positionX, double positionY, double positionZ, doubl
 void Demo::InitCamera()
 {
 	posCamX = 0.0;
-	posCamY = 12.5;
+	posCamY = 8.5;
 	posCamZ = -20.0;
 	viewCamX = 0.0;
 	viewCamY = 6.5;
@@ -2393,5 +2389,5 @@ void Demo::StrafeCamera(float speed)
 
 int main(int argc, char** argv) {
 	RenderEngine &app = Demo();
-	app.Start("Taman Kincir Angin", 1280, 720, true, false);
+	app.Start("Taman Kincir Angin", 1920, 1080, true, true);
 }
