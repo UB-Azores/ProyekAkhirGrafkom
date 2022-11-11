@@ -27,12 +27,12 @@ void Demo::Init() {
 	BuildPinwheel();
 	BuildPropeller();
 
+	// Hedge
+	BuildHedge();
+
 	/*
 	// Lamp
 	BuildLamp();
-
-	// Hedge
-	BuildHedge();
 
 	// Tree
 	BuildDarkOak();
@@ -78,11 +78,11 @@ void Demo::DeInit() {
 	glDeleteBuffers(1, &VBO_propeller);
 	glDeleteBuffers(1, &EBO_propeller);
 
-	/*
 	glDeleteVertexArrays(1, &VAO_hedge);
 	glDeleteBuffers(1, &VBO_hedge);
 	glDeleteBuffers(1, &EBO_hedge);
-
+	
+	/*
 	glDeleteVertexArrays(1, &VAO_tree);
 	glDeleteBuffers(1, &VBO_tree);
 	glDeleteBuffers(1, &EBO_tree);
@@ -241,6 +241,33 @@ void Demo::Render() {
 	DrawPinwheel(0, 0, 10, 37.5, 0.5, 7.5, 0.5);
 	DrawPinwheel(0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
 
+	// Hedge
+	const int totalHedge = 3;
+	double hedgeX[totalHedge] = {};
+	double hedgeZ[totalHedge] = {};
+	double hedgeXSize[totalHedge] = {};
+	double hedgeZSize[totalHedge] = {};
+
+	hedgeX[0] = 0;
+	hedgeZ[0] = 20;
+	hedgeXSize[0] = 15;
+	hedgeZSize[0] = 5;
+
+	hedgeX[1] = 20;
+	hedgeZ[1] = 20;
+	hedgeXSize[1] = 5;
+	hedgeZSize[1] = 15;
+
+	hedgeX[2] = -20;
+	hedgeZ[2] = 20;
+	hedgeXSize[2] = 5;
+	hedgeZSize[2] = 15;
+
+	for (int i = 0; i < totalHedge; i++) {
+		DrawPinwheel(0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
+		DrawHedge(hedgeX[i], 3, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
+	}
+	
 	/*
 	// Lamp
 	const int totalLamp = 2;
@@ -254,42 +281,10 @@ void Demo::Render() {
 	lampZ[1] = 0;
 
 	for (int i = 0; i < totalLamp; i++) {
-		DrawPinwheel(0, lampX[i], 0, lampZ[i], 1.5, 0.5, 1.5);
-		DrawCenter(lampX[i], 2, lampZ[i], 0.75, 3, 0.75);
+		DrawPinwheel(0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
+		DrawCenter(lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
 		DrawPinwheel(0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
 		DrawLamp(lampX[i], 3.75, lampZ[i]);
-	}
-	
-	// Hedge
-	const int totalHedge = 4;
-	double hedgeX[totalHedge] = {};
-	double hedgeZ[totalHedge] = {};
-	double hedgeXSize[totalHedge] = {};
-	double hedgeZSize[totalHedge] = {};
-
-	hedgeX[0] = 0;
-	hedgeZ[0] = 20;
-	hedgeXSize[0] = 15;
-	hedgeZSize[0] = 5;
-
-	hedgeX[1] = 0;
-	hedgeZ[1] = -20;
-	hedgeXSize[1] = 15;
-	hedgeZSize[1] = 5;
-
-	hedgeX[2] = 20;
-	hedgeZ[2] = 20;
-	hedgeXSize[2] = 5;
-	hedgeZSize[2] = 15;
-
-	hedgeX[3] = -20;
-	hedgeZ[3] = 20;
-	hedgeXSize[3] = 5;
-	hedgeZSize[3] = 15;
-
-	for (int i = 0; i < totalHedge; i++) {
-		DrawPinwheel(0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
-		DrawHedge(hedgeX[i], 3, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
 	}
 
 	// Tree
@@ -1154,7 +1149,7 @@ void Demo::DrawCenter(double positionX, double positionY, double positionZ, doub
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
-
+	
 void Demo::BuildPinwheel() {
 	// load image into texture memory
 	// ------------------------------
@@ -1401,128 +1396,6 @@ void Demo::DrawPropeller(double positionX, double positionY, double positionZ, d
 	glBindVertexArray(0);
 }
 
-/*
-// Lamp Things
-void Demo::BuildLamp() {
-	// load image into texture memory
-	// ------------------------------
-	// Load and create a texture 
-	glGenTextures(1, &texture_lamp);
-	glBindTexture(GL_TEXTURE_2D, texture_lamp);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	int width, height;
-	unsigned char* image = SOIL_load_image("lamp.jpg", &width, &height, 0, SOIL_LOAD_RGBA);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-	SOIL_free_image_data(image);
-	glBindTexture(GL_TEXTURE_2D, 0);
-
-	// set up vertex data (and buffer(s)) and configure vertex attributes
-	// ------------------------------------------------------------------
-	float vertices[] = {
-		// format position, tex coords
-		// front
-		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 1, 0,   // 1
-		0.5,  0.5, 0.5, 1, 1,   // 2
-		-0.5,  0.5, 0.5, 0, 1,  // 3
-
-		// right
-		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 1, 0,  // 5
-		0.5, -0.5, -0.5, 1, 1,  // 6
-		0.5, -0.5,  0.5, 0, 1,  // 7
-
-		// back
-		-0.5, -0.5, -0.5, 0, 0, // 8 
-		0.5,  -0.5, -0.5, 1, 0, // 9
-		0.5,   0.5, -0.5, 1, 1, // 10
-		-0.5,  0.5, -0.5, 0, 1, // 11
-
-		// left
-		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 1, 0, // 13
-		-0.5,  0.5,  0.5, 1, 1, // 14
-		-0.5,  0.5, -0.5, 0, 1, // 15
-
-		// upper
-		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 1, 0,  // 17
-		-0.5, 0.5, -0.5, 1, 1,  // 18
-		0.5, 0.5, -0.5, 0, 1,   // 19
-
-		// bottom
-		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 1, 0,  // 21
-		0.5, -0.5,  0.5, 1, 1,  // 22
-		-0.5, -0.5,  0.5, 0, 1, // 23
-	};
-
-	unsigned int indices[] = {
-		0,  1,  2,  0,  2,  3,   // front
-		4,  5,  6,  4,  6,  7,   // right
-		8,  9,  10, 8,  10, 11,  // back
-		12, 14, 13, 12, 15, 14,  // left
-		16, 18, 17, 16, 19, 18,  // upper
-		20, 22, 21, 20, 23, 22   // bottom
-	};
-
-	glGenVertexArrays(1, &VAO_default);
-	glGenBuffers(1, &VBO_default);
-	glGenBuffers(1, &EBO_default);
-	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-	glBindVertexArray(VAO_default);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO_default);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_default);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(0);
-
-	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
-	glEnableVertexAttribArray(1);
-
-	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-	glBindVertexArray(0);
-
-	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-}
-void Demo::DrawLamp(double positionX, double positionY, double positionZ)
-{
-	glUseProgram(shaderProgram);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture_lamp);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
-
-	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
-
-	glm::mat4 model;
-
-	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
-
-	model = glm::scale(model, glm::vec3(1.25, 1.25, 1.25));
-
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glBindVertexArray(0);
-}
-
 // Hedge Things
 void Demo::BuildHedge() {
 	// load image into texture memory
@@ -1643,6 +1516,129 @@ void Demo::DrawHedge(double positionX, double positionY, double positionZ, doubl
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
+/*
+// Lamp Things
+void Demo::BuildLamp() {
+	// load image into texture memory
+	// ------------------------------
+	// Load and create a texture
+	glGenTextures(1, &texture_lamp);
+	glBindTexture(GL_TEXTURE_2D, texture_lamp);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	int width, height;
+	unsigned char* image = SOIL_load_image("lamp.jpg", &width, &height, 0, SOIL_LOAD_RGBA);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float vertices[] = {
+		// format position, tex coords
+		// front
+		-0.5, -0.5, 0.5, 0, 0,  // 0
+		0.5, -0.5, 0.5, 1, 0,   // 1
+		0.5,  0.5, 0.5, 1, 1,   // 2
+		-0.5,  0.5, 0.5, 0, 1,  // 3
+
+		// right
+		0.5,  0.5,  0.5, 0, 0,  // 4
+		0.5,  0.5, -0.5, 1, 0,  // 5
+		0.5, -0.5, -0.5, 1, 1,  // 6
+		0.5, -0.5,  0.5, 0, 1,  // 7
+
+		// back
+		-0.5, -0.5, -0.5, 0, 0, // 8
+		0.5,  -0.5, -0.5, 1, 0, // 9
+		0.5,   0.5, -0.5, 1, 1, // 10
+		-0.5,  0.5, -0.5, 0, 1, // 11
+
+		// left
+		-0.5, -0.5, -0.5, 0, 0, // 12
+		-0.5, -0.5,  0.5, 1, 0, // 13
+		-0.5,  0.5,  0.5, 1, 1, // 14
+		-0.5,  0.5, -0.5, 0, 1, // 15
+
+		// upper
+		0.5, 0.5,  0.5, 0, 0,   // 16
+		-0.5, 0.5,  0.5, 1, 0,  // 17
+		-0.5, 0.5, -0.5, 1, 1,  // 18
+		0.5, 0.5, -0.5, 0, 1,   // 19
+
+		// bottom
+		-0.5, -0.5, -0.5, 0, 0, // 20
+		0.5, -0.5, -0.5, 1, 0,  // 21
+		0.5, -0.5,  0.5, 1, 1,  // 22
+		-0.5, -0.5,  0.5, 0, 1, // 23
+	};
+
+	unsigned int indices[] = {
+		0,  1,  2,  0,  2,  3,   // front
+		4,  5,  6,  4,  6,  7,   // right
+		8,  9,  10, 8,  10, 11,  // back
+		12, 14, 13, 12, 15, 14,  // left
+		16, 18, 17, 16, 19, 18,  // upper
+		20, 22, 21, 20, 23, 22   // bottom
+	};
+
+	glGenVertexArrays(1, &VAO_default);
+	glGenBuffers(1, &VBO_default);
+	glGenBuffers(1, &EBO_default);
+	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+	glBindVertexArray(VAO_default);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_default);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_default);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// define position pointer layout 0
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(0);
+
+	// define texcoord pointer layout 1
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+
+	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
+
+	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+}
+void Demo::DrawLamp(double positionX, double positionY, double positionZ)
+{
+	glUseProgram(shaderProgram);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_lamp);
+	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+
+	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+
+	glm::mat4 model;
+
+	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
+
+	model = glm::scale(model, glm::vec3(1.25, 1.25, 1.25));
+
+	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindVertexArray(0);
+}
+
 
 // Tree Things
 void Demo::BuildDarkOak() {
@@ -2389,5 +2385,5 @@ void Demo::StrafeCamera(float speed)
 
 int main(int argc, char** argv) {
 	RenderEngine &app = Demo();
-	app.Start("Taman Kincir Angin", 1920, 1080, true, true);
+	app.Start("Taman Kincir Angin", 1280, 720, true, false);
 }

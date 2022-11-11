@@ -57,18 +57,18 @@ private:
 	void DrawPinwheel(int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 	void DrawPropeller(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
+	// Hedge Things
+	GLuint texture_hedge, VBO_hedge, VAO_hedge, EBO_hedge;
+
+	void BuildHedge();
+	void DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+
 	/*
 	// Lamp Things
 	GLuint texture_lamp;
 
 	void BuildLamp();
 	void DrawLamp(double positionX, double positionY, double positionZ);
-
-	// Hedge Things
-	GLuint texture_hedge, VBO_hedge, VAO_hedge, EBO_hedge;
-
-	void BuildHedge();
-	void DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Tree Things
 	GLuint	texture_darkOak, texture_birch, VBO_tree, VAO_tree, EBO_tree,
