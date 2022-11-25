@@ -63,13 +63,13 @@ private:
 	void BuildHedge();
 	void DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
-	/*
 	// Lamp Things
 	GLuint texture_lamp;
 
 	void BuildLamp();
 	void DrawLamp(double positionX, double positionY, double positionZ);
 
+	/*
 	// Tree Things
 	GLuint	texture_darkOak, texture_birch, VBO_tree, VAO_tree, EBO_tree,
 			texture_darkLeaf, texture_birchLeaf, VBO_leaf, VAO_leaf, EBO_leaf;
@@ -106,7 +106,7 @@ private:
 	bool kakiTanganGerak = false;
 
 	// Camera Things
-	double viewCamX, viewCamY, viewCamZ, upCamX, upCamY, upCamZ, posCamX, posCamY, posCamZ;
+	float viewCamX, viewCamY, viewCamZ, upCamX, upCamY, upCamZ, posCamX, posCamY, posCamZ;
 	float CAMERA_SPEED, fovy;
 	void MoveCamera(float speed);
 	void StrafeCamera(float speed);
