@@ -23,11 +23,16 @@ private:
 	virtual void Render();
 	virtual void ProcessInput(GLFWwindow *window);
 
+	// Skybox Things
+	GLuint texture_skybox, VBO_skybox, VAO_skybox, EBO_skybox;
+	void BuildSkybox();
+	void DrawSkybox(GLuint shader);
+
 	// Plane Things
 	GLuint texture_plane, VBO_plane, VAO_plane, EBO_plane;
 
 	void BuildColoredPlane();
-	void DrawColoredPlane();
+	void DrawColoredPlane(GLuint shader);
 
 	// Pedestrian Things (1-2 png boy) (3-4 jpg) (5-7 png)
 	std::string skinType = "skin5.png";
@@ -37,10 +42,10 @@ private:
 	void BuildLeg();
 	void BuildHand();
 	void BuildHead();
-	void DrawBody();
-	void DrawLeg(int rotate, double positionX, double positionY, double positionZ);
-	void DrawHand(int rotate, double positionX, double positionY, double positionZ);
-	void DrawHead();
+	void DrawBody(GLuint shader);
+	void DrawLeg(GLuint shader, int rotate, double positionX, double positionY, double positionZ);
+	void DrawHand(GLuint shader, int rotate, double positionX, double positionY, double positionZ);
+	void DrawHead(GLuint shader);
 
 	// Windmill Things
 	GLuint	texture_foundation, VBO_foundation, VAO_foundation, EBO_foundation,
@@ -52,24 +57,23 @@ private:
 	void BuildPinwheel();
 	void BuildCenter();
 	void BuildPropeller();
-	void DrawFoundation();
-	void DrawCenter(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawPinwheel(int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawPropeller(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawFoundation(GLuint shader);
+	void DrawCenter(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawPinwheel(GLuint shader, int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawPropeller(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Hedge Things
 	GLuint texture_hedge, VBO_hedge, VAO_hedge, EBO_hedge;
 
 	void BuildHedge();
-	void DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawHedge(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Lamp Things
 	GLuint texture_lamp;
 
 	void BuildLamp();
-	void DrawLamp(double positionX, double positionY, double positionZ);
+	void DrawLamp(GLuint shader, double positionX, double positionY, double positionZ);
 
-	/*
 	// Tree Things
 	GLuint	texture_darkOak, texture_birch, VBO_tree, VAO_tree, EBO_tree,
 			texture_darkLeaf, texture_birchLeaf, VBO_leaf, VAO_leaf, EBO_leaf;
@@ -78,11 +82,12 @@ private:
 	void BuildBirch();
 	void BuildDarkLeaf();
 	void BuildBirchLeaf();
-	void DrawDarkOak(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawBirch(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawDarkLeaf(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawBirchLeaf(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawDarkOak(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawBirch(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawDarkLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawBirchLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
+	/*
 	// Road Things
 	GLuint texture_cobble, texture_stone, VBO_road, VAO_road, EBO_road;
 
@@ -111,4 +116,9 @@ private:
 	void MoveCamera(float speed);
 	void StrafeCamera(float speed);
 	void InitCamera();
+
+	// Shadow Things
+	GLuint depthmapShader, shadowmapShader, depthMapFBO, depthMap;
+	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	void BuildDepthMap();
 };

@@ -9,9 +9,11 @@ Demo::~Demo() {
 
 // Initialization Things
 void Demo::Init() {
-	// build and compile our shader program
-	// ------------------------------------
-	shaderProgram = BuildShader("vertexShader.vert", "fragmentShader.frag", nullptr);
+	//shaderProgram = BuildShader("vertexShader.vert", "fragmentShader.frag", nullptr);
+	shadowmapShader = BuildShader("shadowMap.vert", "shadowMap.frag", nullptr);
+	depthmapShader = BuildShader("depthMap.vert", "depthMap.frag", nullptr);
+
+	BuildSkybox();
 
 	BuildColoredPlane();
 
@@ -29,23 +31,25 @@ void Demo::Init() {
 
 	// Hedge
 	BuildHedge();
-
 	
 	// Lamp
 	BuildLamp();
 
-	/*
 	// Tree
 	BuildDarkOak();
 	BuildBirch();
 	BuildDarkLeaf();
 	BuildBirchLeaf();
+
+	/*
 	// Road
 	BuildCobble();
 	BuildStone();
 	/**/
 
 	InitCamera();
+
+	BuildDepthMap();
 }
 void Demo::DeInit() {
 	// optional: de-allocate all resources once they've outlived their purpose:
@@ -53,6 +57,10 @@ void Demo::DeInit() {
 	glDeleteVertexArrays(1, &VAO_default);
 	glDeleteBuffers(1, &VBO_default);
 	glDeleteBuffers(1, &EBO_default);
+
+	glDeleteVertexArrays(1, &VAO_skybox);
+	glDeleteBuffers(1, &VBO_skybox);
+	glDeleteBuffers(1, &EBO_skybox);
 
 	glDeleteVertexArrays(1, &VAO_plane);
 	glDeleteBuffers(1, &VBO_plane);
@@ -82,17 +90,20 @@ void Demo::DeInit() {
 	glDeleteBuffers(1, &VBO_hedge);
 	glDeleteBuffers(1, &EBO_hedge);
 
-	/*
 	glDeleteVertexArrays(1, &VAO_tree);
 	glDeleteBuffers(1, &VBO_tree);
 	glDeleteBuffers(1, &EBO_tree);
 	glDeleteVertexArrays(1, &VAO_leaf);
 	glDeleteBuffers(1, &VBO_leaf);
 	glDeleteBuffers(1, &EBO_leaf);
+
+	/*
 	glDeleteVertexArrays(1, &VAO_road);
 	glDeleteBuffers(1, &VBO_road);
 	glDeleteBuffers(1, &EBO_road);
 	/**/
+
+	glDeleteBuffers(1, &depthMapFBO);
 }
 
 // Running Things
@@ -184,61 +195,60 @@ void Demo::Update(double deltaTime) {
 }
 
 void Demo::Render() {
-	glViewport(0, 0, this->screenWidth, this->screenHeight);
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 	glClearColor(55.0f / 255.0f, 198.0f / 255.0f, 255.0f / 255.0f, 1.0f);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	// Step 1 Render depth of scene to texture
+	// ----------------------------------------
+	glm::vec3 lightPos = glm::vec3(0.0f, 20.0f, 5.0f);
 
-	glEnable(GL_DEPTH_TEST);
+	glm::mat4 lightProjection, lightView;
+	glm::mat4 lightSpaceMatrix;
+	float near_plane = 1.0f, far_plane = 100.0f;
+	lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
+	lightView = glm::lookAt(glm::vec3(lightPos.x, lightPos.y, lightPos.z), glm::vec3(pindahX, pindahY, pindahZ), glm::vec3(0.0, 1.0, 0.0));
+	lightSpaceMatrix = lightProjection * lightView;
+	// render scene from light's point of view
+	UseShader(this->depthmapShader);
+	glUniformMatrix4fv(glGetUniformLocation(this->depthmapShader, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+	glViewport(0, 0, this->SHADOW_WIDTH, this->SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
-	// Pass perspective projection matrix
-	glm::mat4 projection = glm::perspective(fovy, (GLfloat)this->screenWidth / (GLfloat)this->screenHeight, 0.1f, 100.0f);
-	GLint projLoc = glGetUniformLocation(this->shaderProgram, "projection");
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+	// Light
+	DrawPinwheel(this->depthmapShader, 0, lightPos.x, lightPos.y, lightPos.z, 1, 1, 1);
 
-	// LookAt camera (position, target/direction, up)
-	glm::mat4 view = glm::lookAt(glm::vec3(posCamX, posCamY, posCamZ), glm::vec3(viewCamX, viewCamY, viewCamZ), glm::vec3(upCamX, upCamY, upCamZ));
-	GLint viewLoc = glGetUniformLocation(this->shaderProgram, "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
-	// Set lighting attribute
-	GLint viewPosLoc = glGetUniformLocation(this->shaderProgram, "viewPos");
-	glUniform3f(viewPosLoc, posCamX, posCamY, posCamZ);
-	glUniform3f(glGetUniformLocation(this->shaderProgram, "dirLight.direction"), 0.0f, -1.0f, 0.0f);
-	glUniform3f(glGetUniformLocation(this->shaderProgram, "dirLight.ambient"), 0.5f, 0.5f, 0.5f);
-	glUniform3f(glGetUniformLocation(this->shaderProgram, "dirLight.diffuse"), 1.5f, 1.5f, 1.5f);
-	glUniform3f(glGetUniformLocation(this->shaderProgram, "dirLight.specluar"), 0.0f, 1.0f, 0.0f);
+	// Skybox
+	DrawSkybox(this->depthmapShader);
 
 	// Plane
-	DrawColoredPlane();
+	DrawColoredPlane(this->depthmapShader);
 
 	// Pedestrian
-	DrawHead();
-	DrawBody();
-	DrawHand(1, 1.3, 4, 0);
-	DrawHand(2, -1.3, 4, 0);
-	DrawLeg(1, -0.5, 1, 0);
-	DrawLeg(2, 0.5, 1, 0);
+	DrawHead(this->depthmapShader);
+	DrawBody(this->depthmapShader);
+	DrawHand(this->depthmapShader, 1, 1.3, 4, 0);
+	DrawHand(this->depthmapShader, 2, -1.3, 4, 0);
+	DrawLeg(this->depthmapShader, 1, -0.5, 1, 0);
+	DrawLeg(this->depthmapShader, 2, 0.5, 1, 0);
 
 	// Windmill
-	DrawFoundation();
+	DrawFoundation(this->depthmapShader);
 
-	DrawCenter(0, 25, 39, 1, 1, 5);
-	DrawCenter(0, 25, 36.5, 1.5, 1.5, 1.5);
-	DrawPinwheel(1, 0, 25, 36.5, 30, 2, 0.1);
-	DrawPinwheel(1, 0, 25, 36.5, 2, 30, 0.1);
-	DrawPropeller(0, 25, 37.5, 32, 4, 0.1);
-	DrawPropeller(0, 25, 37.5, 4, 32, 0.1);
+	DrawCenter(this->depthmapShader, 0, 25, 39, 1, 1, 5);
+	DrawCenter(this->depthmapShader, 0, 25, 36.5, 1.5, 1.5, 1.5);
+	DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 30, 2, 0.1);
+	DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 2, 30, 0.1);
+	DrawPropeller(this->depthmapShader, 0, 25, 37.5, 32, 4, 0.1);
+	DrawPropeller(this->depthmapShader, 0, 25, 37.5, 4, 32, 0.1);
 
-	DrawCenter(0, 10, 37.7, 5, 7.5, 0.5);
-	DrawPinwheel(0, 0, 13.5, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(0, 0, 10, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(0, 0, 6.5, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(0, -2.5, 10, 37.5, 0.5, 7.5, 0.5);
-	DrawPinwheel(0, 0, 10, 37.5, 0.5, 7.5, 0.5);
-	DrawPinwheel(0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
+	DrawCenter(this->depthmapShader, 0, 10, 37.7, 5, 7.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, 0, 13.5, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, 0, 6.5, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, -2.5, 10, 37.5, 0.5, 7.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 0.5, 7.5, 0.5);
+	DrawPinwheel(this->depthmapShader, 0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
 
 	// Hedge
 	const int totalHedge = 3;
@@ -263,12 +273,12 @@ void Demo::Render() {
 	hedgeZSize[2] = 15;
 
 	for (int i = 0; i < totalHedge; i++) {
-		DrawPinwheel(0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
-		DrawHedge(hedgeX[i], 2.75, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
+		DrawPinwheel(this->depthmapShader, 0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
+		DrawHedge(this->depthmapShader, hedgeX[i], 2.75, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
 	}
 
 	// Lamp
-	const int totalLamp = 3;
+	const int totalLamp = 2;
 	double lampX[totalLamp] = {};
 	double lampZ[totalLamp] = {};
 
@@ -278,17 +288,13 @@ void Demo::Render() {
 	lampX[1] = -10;
 	lampZ[1] = 0;
 
-	lampX[2] = 20;
-	lampZ[2] = 0;
-
 	for (int i = 0; i < totalLamp; i++) {
-		DrawPinwheel(0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
-		DrawCenter(lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
-		DrawPinwheel(0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
-		DrawLamp(lampX[i], 3.75, lampZ[i]);
+		DrawPinwheel(this->depthmapShader, 0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
+		DrawCenter(this->depthmapShader, lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
+		DrawPinwheel(this->depthmapShader, 0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
+		DrawLamp(this->depthmapShader, lampX[i], 3.75, lampZ[i]);
 	}
 
-	/*
 	// Tree
 	const int totalTree = 2;
 	double treeX[totalTree] = {};
@@ -302,19 +308,114 @@ void Demo::Render() {
 	treeType[1] = "Birch";
 	for (int i = 0; i < totalTree; i++) {
 		if (treeType[i] == "Oak") {
-			DrawDarkOak(treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
-			DrawDarkLeaf(treeX[i]+1.5, 10, treeZ[i]-1, 4.5, 5, 4.5);
-			DrawDarkLeaf(treeX[i]-1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
-			DrawDarkLeaf(treeX[i]-3, 9.5, treeZ[i]+1, 4.5, 5, 4.5);
+			DrawDarkOak(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+			DrawDarkLeaf(this->depthmapShader, treeX[i] + 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
+			DrawDarkLeaf(this->depthmapShader, treeX[i] - 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+			DrawDarkLeaf(this->depthmapShader, treeX[i] - 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
 		}
 		else {
-
-			DrawBirch(treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
-			DrawBirchLeaf(treeX[i] - 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
-			DrawBirchLeaf(treeX[i] + 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
-			DrawBirchLeaf(treeX[i] + 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+			DrawBirch(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+			DrawBirchLeaf(this->depthmapShader, treeX[i] - 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
+			DrawBirchLeaf(this->depthmapShader, treeX[i] + 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+			DrawBirchLeaf(this->depthmapShader, treeX[i] + 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
 		}
 	}
+	
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+
+	// Step 2 Render scene normally using generated depth map
+	// ------------------------------------------------------
+	glViewport(0, 0, this->screenWidth, this->screenHeight);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+	// Pass perspective projection matrix
+	UseShader(this->shadowmapShader);
+	glm::mat4 projection = glm::perspective(fovy, (GLfloat)this->screenWidth / (GLfloat)this->screenHeight, 0.1f, 100.0f);
+	GLint projLoc = glGetUniformLocation(this->shadowmapShader, "projection");
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	// LookAt camera (position, target/direction, up)
+	glm::mat4 view = glm::lookAt(glm::vec3(posCamX, posCamY, posCamZ), glm::vec3(viewCamX, viewCamY, viewCamZ), glm::vec3(upCamX, upCamY, upCamZ));
+	GLint viewLoc = glGetUniformLocation(this->shadowmapShader, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+	// Setting Light Attributes
+	glUniformMatrix4fv(glGetUniformLocation(this->shadowmapShader, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+	glUniform3f(glGetUniformLocation(this->shadowmapShader, "viewPos"), posCamX, posCamY, posCamZ);
+	glUniform3f(glGetUniformLocation(this->shadowmapShader, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+	// Configure Shaders
+	glUniform1i(glGetUniformLocation(this->shadowmapShader, "diffuseTexture"), 0);
+	glUniform1i(glGetUniformLocation(this->shadowmapShader, "shadowMap"), 1);
+
+	// Light
+	DrawPinwheel(this->shadowmapShader, 0, lightPos.x, lightPos.y, lightPos.z, 1, 1, 1);
+
+	// Skybox
+	DrawSkybox(this->shadowmapShader);
+
+	// Plane
+	DrawColoredPlane(this->shadowmapShader);
+
+	// Pedestrian
+	DrawHead(this->shadowmapShader);
+	DrawBody(this->shadowmapShader);
+	DrawHand(this->shadowmapShader, 1, 1.3, 4, 0);
+	DrawHand(this->shadowmapShader, 2, -1.3, 4, 0);
+	DrawLeg(this->shadowmapShader, 1, -0.5, 1, 0);
+	DrawLeg(this->shadowmapShader, 2, 0.5, 1, 0);
+
+	// Windmill
+	DrawFoundation(this->shadowmapShader);
+
+	DrawCenter(this->shadowmapShader, 0, 25, 39, 1, 1, 5);
+	DrawCenter(this->shadowmapShader, 0, 25, 36.5, 1.5, 1.5, 1.5);
+	DrawPinwheel(this->shadowmapShader, 1, 0, 25, 36.5, 30, 2, 0.1);
+	DrawPinwheel(this->shadowmapShader, 1, 0, 25, 36.5, 2, 30, 0.1);
+	DrawPropeller(this->shadowmapShader, 0, 25, 37.5, 32, 4, 0.1);
+	DrawPropeller(this->shadowmapShader, 0, 25, 37.5, 4, 32, 0.1);
+
+	DrawCenter(this->shadowmapShader, 0, 10, 37.7, 5, 7.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, 0, 13.5, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, 0, 10, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, 0, 6.5, 37.5, 5, 0.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, -2.5, 10, 37.5, 0.5, 7.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, 0, 10, 37.5, 0.5, 7.5, 0.5);
+	DrawPinwheel(this->shadowmapShader, 0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
+
+	// Hedge
+	for (int i = 0; i < totalHedge; i++) {
+		DrawPinwheel(this->shadowmapShader, 0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
+		DrawHedge(this->shadowmapShader, hedgeX[i], 2.75, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
+	}
+
+	// Lamp
+	for (int i = 0; i < totalLamp; i++) {
+		DrawPinwheel(this->shadowmapShader, 0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
+		DrawCenter(this->shadowmapShader, lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
+		DrawPinwheel(this->shadowmapShader, 0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
+		DrawLamp(this->shadowmapShader, lampX[i], 3.75, lampZ[i]);
+	}
+
+	// Tree
+	for (int i = 0; i < totalTree; i++) {
+		if (treeType[i] == "Oak") {
+			DrawDarkOak(this->shadowmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+			DrawDarkLeaf(this->shadowmapShader, treeX[i]+1.5, 10, treeZ[i]-1, 4.5, 5, 4.5);
+			DrawDarkLeaf(this->shadowmapShader, treeX[i]-1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+			DrawDarkLeaf(this->shadowmapShader, treeX[i]-3, 9.5, treeZ[i]+1, 4.5, 5, 4.5);
+		}
+		else {
+			DrawBirch(this->shadowmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+			DrawBirchLeaf(this->shadowmapShader, treeX[i] - 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
+			DrawBirchLeaf(this->shadowmapShader, treeX[i] + 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+			DrawBirchLeaf(this->shadowmapShader, treeX[i] + 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+		}
+	}
+
+	/*
 	// Road
 	DrawCobble(0, -0.5, 0, 3, 0.1, 20);
 	DrawStone(3, -0.5, 0, 3, 0.1, 20);
@@ -322,6 +423,131 @@ void Demo::Render() {
 	/**/
 
 	glDisable(GL_DEPTH_TEST);
+}
+
+// Skybox Things
+void Demo::BuildSkybox() {
+	// load image into texture memory
+	// ------------------------------
+	// Load and create a texture 
+	glGenTextures(1, &texture_skybox);
+	glBindTexture(GL_TEXTURE_2D, texture_skybox);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	int width, height;
+	unsigned char* image = SOIL_load_image("skybox.png", &width, &height, 0, SOIL_LOAD_RGBA);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	SOIL_free_image_data(image);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// set up vertex data (and buffer(s)) and configure vertex attributes
+	// ------------------------------------------------------------------
+	float vertices[] = {
+		// format position, tex coords
+		// front
+		-0.5, -0.5, 0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1,  // 0
+		0.5, -0.5, 0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1,   // 1
+		0.5,  0.5, 0.5,  (2.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1,   // 2
+		-0.5,  0.5, 0.5, (1.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1,  // 3
+
+		// right	
+		0.5, -0.5,  0.5, (2.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0,  // 4
+		0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0,  // 5
+		0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0,  // 6
+		0.5,  0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0,  // 7
+
+		// back
+		-0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1, // 8 
+		0.5,  -0.5, -0.5, (4.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1, // 9
+		0.5,   0.5, -0.5, (4.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1, // 10
+		-0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1, // 11
+
+		// left
+		-0.5, -0.5, -0.5, (0.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0, // 12
+		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0, // 13
+		-0.5,  0.5,  0.5, (1.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0, // 14
+		-0.5,  0.5, -0.5, (0.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0, // 15
+
+		// upper
+		0.5, 0.5,  0.5,  (1.0f / 4.0f), (2.0f / 3.0f),  0, 1, 0,  // 16
+		-0.5, 0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f),  0, 1, 0, // 17
+		-0.5, 0.5, -0.5, (2.0f / 4.0f), (3.0f / 3.0f),  0, 1, 0, // 18
+		0.5, 0.5, -0.5,  (1.0f / 4.0f), (3.0f / 3.0f),  0, 1, 0, // 19
+
+		// bottom
+		-0.5, -0.5, -0.5, (1.0f / 4.0f), (0.0f / 3.0f), 0, -1, 0, // 20
+		0.5, -0.5, -0.5,  (2.0f / 4.0f), (0.0f / 3.0f), 0, -1, 0,  // 21
+		0.5, -0.5,  0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, -1, 0,  // 22
+		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, -1, 0, // 23
+	};
+
+	unsigned int indices[] = {
+		0,  1,  2,  0,  2,  3,   // front
+		4,  5,  6,  4,  6,  7,   // right
+		8,  9,  10, 8,  10, 11,  // back
+		12, 14, 13, 12, 15, 14,  // left
+		16, 18, 17, 16, 19, 18,  // upper
+		20, 22, 21, 20, 23, 22   // bottom
+	};
+
+	glGenVertexArrays(1, &VAO_skybox);
+	glGenBuffers(1, &VBO_skybox);
+	glGenBuffers(1, &EBO_skybox);
+	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+	glBindVertexArray(VAO_skybox);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO_skybox);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_skybox);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	// define position pointer layout 0
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(0);
+
+	// define texcoord pointer layout 1
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);;
+
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
+	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
+	glBindVertexArray(0);
+
+	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+}
+void Demo::DrawSkybox(GLuint shader)
+{
+	UseShader(shader);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture_skybox);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
+	glBindVertexArray(VAO_skybox); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+
+	glm::mat4 model;
+
+	model = glm::translate(model, glm::vec3(0, 25, 0));
+	model = glm::scale(model, glm::vec3(200, 200, 200));
+
+	GLint modelLoc = glGetUniformLocation(shader, "model");
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBindVertexArray(0);
 }
 
 // Plane Things
@@ -346,10 +572,10 @@ void Demo::BuildColoredPlane()
 	GLfloat vertices[] = {
 		// format position, tex coords
 		// bottom
-		-100.0, -0.5, -100.0,  0,  0, 0, -1, 0,
-		 100.0, -0.5, -100.0, 10,  0, 0, -1, 0,
-		 100.0, -0.5,  100.0, 10, 10, 0, -1, 0,
-		-100.0, -0.5,  100.0,  0, 10, 0, -1, 0,
+		-100.0, -0.5, -100.0,  0,  0, 0, 1, 0,
+		 100.0, -0.5, -100.0, 10,  0, 0, 1, 0,
+		 100.0, -0.5,  100.0, 10, 10, 0, 1, 0,
+		-100.0, -0.5,  100.0,  0, 10, 0, 1, 0,
 	};
 
 	GLuint indices[] = { 0,  2,  1,  0,  3,  2 };
@@ -380,19 +606,19 @@ void Demo::BuildColoredPlane()
 
 	glBindVertexArray(0); // Unbind VAO
 }
-void Demo::DrawColoredPlane()
+void Demo::DrawColoredPlane(GLuint shader)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_plane);
-
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 1);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_plane); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
 	glm::mat4 model;
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -501,15 +727,14 @@ void Demo::BuildHead() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawHead()
+void Demo::DrawHead(GLuint shader)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
-
-	// Material Diffuse
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_head); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -521,7 +746,7 @@ void Demo::DrawHead()
 
 	model = glm::scale(model, glm::vec3(1.5, 1.5, 1.5));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -629,14 +854,14 @@ void Demo::BuildBody() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawBody()
+void Demo::DrawBody(GLuint shader)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
-	// Material Diffuse
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_body); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -648,7 +873,7 @@ void Demo::DrawBody()
 
 	model = glm::scale(model, glm::vec3(2, 3, 1));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -756,14 +981,14 @@ void Demo::BuildHand() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawHand(int rotate, double positionX, double positionY, double positionZ)
+void Demo::DrawHand(GLuint shader, int rotate, double positionX, double positionY, double positionZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
-	// Material Diffuse
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_hand); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -786,7 +1011,7 @@ void Demo::DrawHand(int rotate, double positionX, double positionY, double posit
 
 	model = glm::scale(model, glm::vec3(0.7, 3, 1));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -894,14 +1119,14 @@ void Demo::BuildLeg() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawLeg(int rotate, double positionX, double positionY, double positionZ)
+void Demo::DrawLeg(GLuint shader, int rotate, double positionX, double positionY, double positionZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_pedestrian);
-	// Material Diffuse
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_leg); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -924,7 +1149,7 @@ void Demo::DrawLeg(int rotate, double positionX, double positionY, double positi
 
 	model = glm::scale(model, glm::vec3(1, 3, 1));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -953,8 +1178,8 @@ void Demo::BuildFoundation() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-0.5, -1, 0.9f,  0, 0, 0, 0, 1, // 0
-		0.5, -1, 0.9f,   4, 0, 0, 0, 1, // 1
+		-0.5, -1, 0.9f,  0, 0,  0, 0, 1, // 0
+		0.5, -1, 0.9f,   4, 0,  0, 0, 1, // 1
 		0.25f, 1, 0.45f,  4, 4,0, 0, 1, // 2
 		-0.25f, 1, 0.45f, 0, 4,0, 0, 1,  // 3
 
@@ -1033,13 +1258,14 @@ void Demo::BuildFoundation() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawFoundation()
+void Demo::DrawFoundation(GLuint shader)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_foundation);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_foundation); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -1049,7 +1275,7 @@ void Demo::DrawFoundation()
 
 	model = glm::scale(model, glm::vec3(20, 20, 20));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -1157,16 +1383,15 @@ void Demo::BuildCenter() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawCenter(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawCenter(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	// Bind diffuse map
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_center);
-
-	// Material Diffuse
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -1176,7 +1401,7 @@ void Demo::DrawCenter(double positionX, double positionY, double positionZ, doub
 
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -1284,13 +1509,14 @@ void Demo::BuildPinwheel() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawPinwheel(int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawPinwheel(GLuint shader, int rotate, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_pinwheel);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -1304,7 +1530,7 @@ void Demo::DrawPinwheel(int rotate, double positionX, double positionY, double p
 
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -1412,13 +1638,14 @@ void Demo::BuildPropeller() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawPropeller(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawPropeller(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_propeller);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_propeller); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -1430,7 +1657,7 @@ void Demo::DrawPropeller(double positionX, double positionY, double positionZ, d
 
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -1539,13 +1766,14 @@ void Demo::BuildHedge() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 }
-void Demo::DrawHedge(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawHedge(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_hedge);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_hedge); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 
@@ -1555,7 +1783,7 @@ void Demo::DrawHedge(double positionX, double positionY, double positionZ, doubl
 
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
@@ -1648,25 +1876,26 @@ void Demo::BuildLamp() {
 	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
-void Demo::DrawLamp(double positionX, double positionY, double positionZ)
+void Demo::DrawLamp(GLuint shader, double positionX, double positionY, double positionZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_lamp);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "material.diffuse"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
 
 	glBindVertexArray(VAO_default); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(1.25, 1.25, 1.25));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
 
-/*
 // Tree Things
 void Demo::BuildDarkOak() {
 	// load image into texture memory
@@ -1686,25 +1915,25 @@ void Demo::BuildDarkOak() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-1, 0, -1, 0, 0,  // 0
-		1, 0, -1, 5, 0,   // 1
-		0.25,  1, -0.25, 5, 5,   // 2
-		-0.25,  1, -0.25, 0, 5,  // 3
+		-1, 0, -1, 0, 0, 0, 0, 1,  // 0
+		1, 0, -1, 5, 0,  0, 0, 1,  // 1
+		0.25,  1, -0.25, 5, 5, 0, 0, 1,   // 2
+		-0.25,  1, -0.25, 0, 5, 0, 0, 1,  // 3
 		// right
-		1, 0, -1, 0, 0,  // 0
-		1, 0, 1, 5, 0,   // 1
-		0.25,  1, 0.25, 5, 5,   // 2
-		0.25,  1, -0.25, 0, 5,  // 3
+		1, 0, -1, 0, 0, 1, 0, 0,  // 0
+		1, 0, 1, 5, 0, 1, 0, 0,   // 1
+		0.25,  1, 0.25, 5, 5,  1, 0, 0,  // 2
+		0.25,  1, -0.25, 0, 5, 1, 0, 0,  // 3
 		// back
-		1, 0, 1, 0, 0,  // 0
-		-1, 0, 1, 5, 0,   // 1
-		-0.25,  1, 0.25, 5, 5,   // 2
-		0.25,  1, 0.25, 0, 5,  // 3
+		1, 0, 1, 0, 0, 0, 0, -1,  // 0
+		-1, 0, 1, 5, 0,  0, 0, -1,  // 1
+		-0.25,  1, 0.25, 5, 5,  0, 0, -1,  // 2
+		0.25,  1, 0.25, 0, 5, 0, 0, -1,  // 3
 		// left
-		-1, 0, 1, 0, 0,  // 0
-		-1, 0, -1, 5, 0,   // 1
-		-0.25,  1, -0.25, 5, 5,   // 2
-		-0.25,  1, 0.25, 5, 5,  // 3
+		-1, 0, 1, 0, 0, -1, 0, 0,  // 0
+		-1, 0, -1, 5, 0,  -1, 0, 0,  // 1
+		-0.25,  1, -0.25, 5, 5,  -1, 0, 0,  // 2
+		-0.25,  1, 0.25, 5, 5, -1, 0, 0,  // 3
 	};
 	unsigned int indices[] = {
 		0,  1,  2,  0,  2,  3,   // front
@@ -1722,11 +1951,15 @@ void Demo::BuildDarkOak() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tree);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(0);
 	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -1735,22 +1968,26 @@ void Demo::BuildDarkOak() {
 	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
-void Demo::DrawDarkOak(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawDarkOak(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_darkOak);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_tree); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
 void Demo::BuildBirch() {
 	// load image into texture memory
 	// ------------------------------
@@ -1769,25 +2006,25 @@ void Demo::BuildBirch() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-1, 0, -1, 0, 0,  // 0
-		1, 0, -1, 5, 0,   // 1
-		0.25,  1, -0.25, 5, 5,   // 2
-		-0.25,  1, -0.25, 0, 5,  // 3
+		-1, 0, -1, 0, 0, 0, 0, 1,  // 0
+		1, 0, -1, 5, 0,  0, 0, 1,  // 1
+		0.25,  1, -0.25, 5, 5,  0, 0, 1,  // 2
+		-0.25,  1, -0.25, 0, 5,  0, 0, 1, // 3
 		// right
-		1, 0, -1, 0, 0,  // 0
-		1, 0, 1, 5, 0,   // 1
-		0.25,  1, 0.25, 5, 5,   // 2
-		0.25,  1, -0.25, 0, 5,  // 3
+		1, 0, -1, 0, 0, 1, 0, 0,  // 0
+		1, 0, 1, 5, 0, 1, 0, 0,   // 1
+		0.25,  1, 0.25, 5, 5,  1, 0, 0,  // 2
+		0.25,  1, -0.25, 0, 5, 1, 0, 0,  // 3
 		// back
-		1, 0, 1, 0, 0,  // 0
-		-1, 0, 1, 5, 0,   // 1
-		-0.25,  1, 0.25, 5, 5,   // 2
-		0.25,  1, 0.25, 0, 5,  // 3
+		1, 0, 1, 0, 0, 0, 0, -1,  // 0
+		-1, 0, 1, 5, 0, 0, 0, -1,   // 1
+		-0.25,  1, 0.25, 5, 5, 0, 0, -1,   // 2
+		0.25,  1, 0.25, 0, 5, 0, 0, -1,  // 3
 		// left
-		-1, 0, 1, 0, 0,  // 0
-		-1, 0, -1, 5, 0,   // 1
-		-0.25,  1, -0.25, 5, 5,   // 2
-		-0.25,  1, 0.25, 5, 5,  // 3
+		-1, 0, 1, 0, 0, -1, 0, 0,  // 0
+		-1, 0, -1, 5, 0, -1, 0, 0,   // 1
+		-0.25,  1, -0.25, 5, 5,  -1, 0, 0,  // 2
+		-0.25,  1, 0.25, 5, 5, -1, 0, 0,  // 3
 	};
 	unsigned int indices[] = {
 		0,  1,  2,  0,  2,  3,   // front
@@ -1805,11 +2042,15 @@ void Demo::BuildBirch() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tree);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(0);
 	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -1818,22 +2059,26 @@ void Demo::BuildBirch() {
 	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
-void Demo::DrawBirch(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawBirch(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_birch);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_tree); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
 void Demo::BuildDarkLeaf() {
 	// load image into texture memory
 	// ------------------------------
@@ -1852,35 +2097,35 @@ void Demo::BuildDarkLeaf() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 5, 0,   // 1
-		0.5,  0.5, 0.5, 5, 1,   // 2
-		-0.5,  0.5, 0.5, 0, 1,  // 3
+		-0.5, -0.5, 0.5, 0, 0, 0, 0, 1,  // 0
+		0.5, -0.5, 0.5, 5, 0,  0, 0, 1,  // 1
+		0.5,  0.5, 0.5, 5, 1,  0, 0, 1,  // 2
+		-0.5,  0.5, 0.5, 0, 1, 0, 0, 1,  // 3
 		// right
-		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 5, 0,  // 5
-		0.5, -0.5, -0.5, 5, 1,  // 6
-		0.5, -0.5,  0.5, 0, 1,  // 7
+		0.5,  0.5,  0.5, 0, 0, 1, 0, 0,  // 4
+		0.5,  0.5, -0.5, 5, 0, 1, 0, 0,  // 5
+		0.5, -0.5, -0.5, 5, 1, 1, 0, 0,  // 6
+		0.5, -0.5,  0.5, 0, 1, 1, 0, 0,  // 7
 		// back
-		-0.5, -0.5, -0.5, 0, 0, // 8
-		0.5,  -0.5, -0.5, 5, 0, // 9
-		0.5,   0.5, -0.5, 5, 1, // 10
-		-0.5,  0.5, -0.5, 0, 1, // 11
+		-0.5, -0.5, -0.5, 0, 0, 0, 0, -1, // 8
+		0.5,  -0.5, -0.5, 5, 0, 0, 0, -1, // 9
+		0.5,   0.5, -0.5, 5, 1, 0, 0, -1, // 10
+		-0.5,  0.5, -0.5, 0, 1, 0, 0, -1, // 11
 		// left
-		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 5, 0, // 13
-		-0.5,  0.5,  0.5, 5, 1, // 14
-		-0.5,  0.5, -0.5, 0, 1, // 15
+		-0.5, -0.5, -0.5, 0, 0, -1, 0, 0, // 12
+		-0.5, -0.5,  0.5, 5, 0, -1, 0, 0, // 13
+		-0.5,  0.5,  0.5, 5, 1, -1, 0, 0, // 14
+		-0.5,  0.5, -0.5, 0, 1, -1, 0, 0, // 15
 		// upper
-		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 5, 0,  // 17
-		-0.5, 0.5, -0.5, 5, 5,  // 18
-		0.5, 0.5, -0.5, 0, 5,   // 19
+		0.5, 0.5,  0.5, 0, 0,  0, 1, 0,  // 16
+		-0.5, 0.5,  0.5, 5, 0, 0, 1, 0,  // 17
+		-0.5, 0.5, -0.5, 5, 5, 0, 1, 0,  // 18
+		0.5, 0.5, -0.5, 0, 5,  0, 1, 0,  // 19
 		// bottom
-		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 5, 0,  // 21
-		0.5, -0.5,  0.5, 5, 5,  // 22
-		-0.5, -0.5,  0.5, 0, 5, // 23
+		-0.5, -0.5, -0.5, 0, 0, 0, -1, 0, // 20
+		0.5, -0.5, -0.5, 5, 0,  0, -1, 0, // 21
+		0.5, -0.5,  0.5, 5, 5,  0, -1, 0, // 22
+		-0.5, -0.5,  0.5, 0, 5, 0, -1, 0, // 23
 	};
 	unsigned int indices[] = {
 		0,  1,  2,  0,  2,  3,   // front
@@ -1900,11 +2145,15 @@ void Demo::BuildDarkLeaf() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_leaf);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(0);
 	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -1913,22 +2162,26 @@ void Demo::BuildDarkLeaf() {
 	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
-void Demo::DrawDarkLeaf(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawDarkLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_darkLeaf);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_leaf); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
 void Demo::BuildBirchLeaf() {
 	// load image into texture memory
 	// ------------------------------
@@ -1947,35 +2200,35 @@ void Demo::BuildBirchLeaf() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 5, 0,   // 1
-		0.5,  0.5, 0.5, 5, 1,   // 2
-		-0.5,  0.5, 0.5, 0, 1,  // 3
+		-0.5, -0.5, 0.5, 0, 0, 0, 0, 1,  // 0
+		0.5, -0.5, 0.5, 5, 0,  0, 0, 1,  // 1
+		0.5,  0.5, 0.5, 5, 1,  0, 0, 1,  // 2
+		-0.5,  0.5, 0.5, 0, 1, 0, 0, 1,  // 3
 		// right
-		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 5, 0,  // 5
-		0.5, -0.5, -0.5, 5, 1,  // 6
-		0.5, -0.5,  0.5, 0, 1,  // 7
+		0.5,  0.5,  0.5, 0, 0, 1, 0, 0,  // 4
+		0.5,  0.5, -0.5, 5, 0, 1, 0, 0,  // 5
+		0.5, -0.5, -0.5, 5, 1, 1, 0, 0,  // 6
+		0.5, -0.5,  0.5, 0, 1, 1, 0, 0,  // 7
 		// back
-		-0.5, -0.5, -0.5, 0, 0, // 8
-		0.5,  -0.5, -0.5, 5, 0, // 9
-		0.5,   0.5, -0.5, 5, 1, // 10
-		-0.5,  0.5, -0.5, 0, 1, // 11
+		-0.5, -0.5, -0.5, 0, 0, 0, 0, -1, // 8
+		0.5,  -0.5, -0.5, 5, 0, 0, 0, -1, // 9
+		0.5,   0.5, -0.5, 5, 1, 0, 0, -1, // 10
+		-0.5,  0.5, -0.5, 0, 1, 0, 0, -1, // 11
 		// left
-		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 5, 0, // 13
-		-0.5,  0.5,  0.5, 5, 1, // 14
-		-0.5,  0.5, -0.5, 0, 1, // 15
+		-0.5, -0.5, -0.5, 0, 0, -1, 0, 0, // 12
+		-0.5, -0.5,  0.5, 5, 0, -1, 0, 0, // 13
+		-0.5,  0.5,  0.5, 5, 1, -1, 0, 0, // 14
+		-0.5,  0.5, -0.5, 0, 1, -1, 0, 0, // 15
 		// upper
-		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 5, 0,  // 17
-		-0.5, 0.5, -0.5, 5, 5,  // 18
-		0.5, 0.5, -0.5, 0, 5,   // 19
+		0.5, 0.5,  0.5, 0, 0,   0, 1, 0, // 16
+		-0.5, 0.5,  0.5, 5, 0,  0, 1, 0, // 17
+		-0.5, 0.5, -0.5, 5, 5,  0, 1, 0, // 18
+		0.5, 0.5, -0.5, 0, 5,   0, 1, 0, // 19
 		// bottom
-		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 5, 0,  // 21
-		0.5, -0.5,  0.5, 5, 5,  // 22
-		-0.5, -0.5,  0.5, 0, 5, // 23
+		-0.5, -0.5, -0.5, 0, 0, 0, -1, 0, // 20
+		0.5, -0.5, -0.5, 5, 0,  0, -1, 0, // 21
+		0.5, -0.5,  0.5, 5, 5,  0, -1, 0, // 22
+		-0.5, -0.5,  0.5, 0, 5, 0, -1, 0, // 23
 	};
 	unsigned int indices[] = {
 		0,  1,  2,  0,  2,  3,   // front
@@ -1995,11 +2248,15 @@ void Demo::BuildBirchLeaf() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_leaf);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(0);
 	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
@@ -2008,22 +2265,27 @@ void Demo::BuildBirchLeaf() {
 	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
-void Demo::DrawBirchLeaf(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawBirchLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_birchLeaf);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_leaf); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
+/*
 // Road Things
 void Demo::BuildCobble() {
 	// load image into texture memory
@@ -2261,7 +2523,32 @@ void Demo::StrafeCamera(float speed)
 	pindahZ += orthoZ * speed;
 }
 
+// Shadow Things
+void Demo::BuildDepthMap() {
+	// configure depth map FBO
+	// -----------------------
+	glGenFramebuffers(1, &depthMapFBO);
+	// create depth texture
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, this->SHADOW_WIDTH, this->SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0, 1.0, 1.0, 1.0 };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	// attach depth texture as FBO's depth buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 int main(int argc, char** argv) {
 	RenderEngine &app = Demo();
-	app.Start("Taman Kincir Angin", 1280, 720, true, false);
+	//app.Start("Taman Kincir Angin", 1280, 720, true, false);
+	app.Start("Taman Kincir Angin", 1920, 1080, true, true);
 }
