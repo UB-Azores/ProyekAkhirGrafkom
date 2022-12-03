@@ -87,15 +87,12 @@ private:
 	void DrawDarkLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 	void DrawBirchLeaf(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
-	/*
 	// Road Things
 	GLuint texture_cobble, texture_stone, VBO_road, VAO_road, EBO_road;
-
 	void BuildCobble();
 	void BuildStone();
-	void DrawCobble(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	void DrawStone(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
-	/**/
+	void DrawCobble(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
+	void DrawStone(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Move Things
 	float speedX = 1;
@@ -121,4 +118,7 @@ private:
 	GLuint depthmapShader, shadowmapShader, depthMapFBO, depthMap;
 	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
 	void BuildDepthMap();
+
+	// Blend Things
+	bool blend = false;
 };

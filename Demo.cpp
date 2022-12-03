@@ -41,11 +41,9 @@ void Demo::Init() {
 	BuildDarkLeaf();
 	BuildBirchLeaf();
 
-	/*
 	// Road
 	BuildCobble();
 	BuildStone();
-	/**/
 
 	InitCamera();
 
@@ -97,11 +95,9 @@ void Demo::DeInit() {
 	glDeleteBuffers(1, &VBO_leaf);
 	glDeleteBuffers(1, &EBO_leaf);
 
-	/*
 	glDeleteVertexArrays(1, &VAO_road);
 	glDeleteBuffers(1, &VBO_road);
 	glDeleteBuffers(1, &EBO_road);
-	/**/
 
 	glDeleteBuffers(1, &depthMapFBO);
 }
@@ -178,6 +174,14 @@ void Demo::ProcessInput(GLFWwindow *window) {
 	if (glfwGetKey(window, GLFW_KEY_W) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_A) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_S) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_D) != GLFW_PRESS) {
 		kakiTanganGerak = false;
 	}
+
+	// Blending Input
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		blend = true;
+	}
+	else {
+		blend = false;
+	}
 }
 
 void Demo::Update(double deltaTime) {
@@ -200,7 +204,7 @@ void Demo::Render() {
 
 	// Step 1 Render depth of scene to texture
 	// ----------------------------------------
-	glm::vec3 lightPos = glm::vec3(0.0f, 20.0f, 5.0f);
+	glm::vec3 lightPos = glm::vec3(0.0f, 50.0f, 0.0f);
 
 	glm::mat4 lightProjection, lightView;
 	glm::mat4 lightSpaceMatrix;
@@ -215,15 +219,6 @@ void Demo::Render() {
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
-	// Light
-	DrawPinwheel(this->depthmapShader, 0, lightPos.x, lightPos.y, lightPos.z, 1, 1, 1);
-
-	// Skybox
-	DrawSkybox(this->depthmapShader);
-
-	// Plane
-	DrawColoredPlane(this->depthmapShader);
-
 	// Pedestrian
 	DrawHead(this->depthmapShader);
 	DrawBody(this->depthmapShader);
@@ -232,25 +227,7 @@ void Demo::Render() {
 	DrawLeg(this->depthmapShader, 1, -0.5, 1, 0);
 	DrawLeg(this->depthmapShader, 2, 0.5, 1, 0);
 
-	// Windmill
-	DrawFoundation(this->depthmapShader);
-
-	DrawCenter(this->depthmapShader, 0, 25, 39, 1, 1, 5);
-	DrawCenter(this->depthmapShader, 0, 25, 36.5, 1.5, 1.5, 1.5);
-	DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 30, 2, 0.1);
-	DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 2, 30, 0.1);
-	DrawPropeller(this->depthmapShader, 0, 25, 37.5, 32, 4, 0.1);
-	DrawPropeller(this->depthmapShader, 0, 25, 37.5, 4, 32, 0.1);
-
-	DrawCenter(this->depthmapShader, 0, 10, 37.7, 5, 7.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, 0, 13.5, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, 0, 6.5, 37.5, 5, 0.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, -2.5, 10, 37.5, 0.5, 7.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 0.5, 7.5, 0.5);
-	DrawPinwheel(this->depthmapShader, 0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
-
-	// Hedge
+	// Hedge Points
 	const int totalHedge = 3;
 	double hedgeX[totalHedge] = {};
 	double hedgeZ[totalHedge] = {};
@@ -272,12 +249,8 @@ void Demo::Render() {
 	hedgeXSize[2] = 5;
 	hedgeZSize[2] = 15;
 
-	for (int i = 0; i < totalHedge; i++) {
-		DrawPinwheel(this->depthmapShader, 0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
-		DrawHedge(this->depthmapShader, hedgeX[i], 2.75, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
-	}
 
-	// Lamp
+	// Lamp Points
 	const int totalLamp = 2;
 	double lampX[totalLamp] = {};
 	double lampZ[totalLamp] = {};
@@ -288,14 +261,7 @@ void Demo::Render() {
 	lampX[1] = -10;
 	lampZ[1] = 0;
 
-	for (int i = 0; i < totalLamp; i++) {
-		DrawPinwheel(this->depthmapShader, 0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
-		DrawCenter(this->depthmapShader, lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
-		DrawPinwheel(this->depthmapShader, 0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
-		DrawLamp(this->depthmapShader, lampX[i], 3.75, lampZ[i]);
-	}
-
-	// Tree
+	// Tree Points
 	const int totalTree = 2;
 	double treeX[totalTree] = {};
 	double treeZ[totalTree] = {};
@@ -306,18 +272,54 @@ void Demo::Render() {
 	treeX[1] = -20;
 	treeZ[1] = 0;
 	treeType[1] = "Birch";
-	for (int i = 0; i < totalTree; i++) {
-		if (treeType[i] == "Oak") {
-			DrawDarkOak(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
-			DrawDarkLeaf(this->depthmapShader, treeX[i] + 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
-			DrawDarkLeaf(this->depthmapShader, treeX[i] - 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
-			DrawDarkLeaf(this->depthmapShader, treeX[i] - 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+
+	if (!blend) {
+		// Windmill
+		DrawFoundation(this->depthmapShader);
+
+		DrawCenter(this->depthmapShader, 0, 25, 39, 1, 1, 5);
+		DrawCenter(this->depthmapShader, 0, 25, 36.5, 1.5, 1.5, 1.5);
+		DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 30, 2, 0.1);
+		DrawPinwheel(this->depthmapShader, 1, 0, 25, 36.5, 2, 30, 0.1);
+		DrawPropeller(this->depthmapShader, 0, 25, 37.5, 32, 4, 0.1);
+		DrawPropeller(this->depthmapShader, 0, 25, 37.5, 4, 32, 0.1);
+
+		DrawCenter(this->depthmapShader, 0, 10, 37.7, 5, 7.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, 0, 13.5, 37.5, 5, 0.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 5, 0.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, 0, 6.5, 37.5, 5, 0.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, -2.5, 10, 37.5, 0.5, 7.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, 0, 10, 37.5, 0.5, 7.5, 0.5);
+		DrawPinwheel(this->depthmapShader, 0, 2.5, 10, 37.5, 0.5, 7.5, 0.5);
+
+		// Hedge
+		for (int i = 0; i < totalHedge; i++) {
+			DrawPinwheel(this->depthmapShader, 0, hedgeX[i], -0.25, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
+			DrawHedge(this->depthmapShader, hedgeX[i], 2.5, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
 		}
-		else {
-			DrawBirch(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
-			DrawBirchLeaf(this->depthmapShader, treeX[i] - 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
-			DrawBirchLeaf(this->depthmapShader, treeX[i] + 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
-			DrawBirchLeaf(this->depthmapShader, treeX[i] + 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+
+		// Lamp
+		for (int i = 0; i < totalLamp; i++) {
+			DrawPinwheel(this->depthmapShader, 0, lampX[i], -0.25, lampZ[i], 1.5, 0.5, 1.5);
+			DrawCenter(this->depthmapShader, lampX[i], 1, lampZ[i], 0.75, 4, 0.75);
+			DrawPinwheel(this->depthmapShader, 0, lampX[i], 3, lampZ[i], 2, 0.5, 2);
+			DrawLamp(this->depthmapShader, lampX[i], 3.75, lampZ[i]);
+		}
+
+		// Tree
+		for (int i = 0; i < totalTree; i++) {
+			if (treeType[i] == "Oak") {
+				DrawDarkOak(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+				DrawDarkLeaf(this->depthmapShader, treeX[i] + 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
+				DrawDarkLeaf(this->depthmapShader, treeX[i] - 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+				DrawDarkLeaf(this->depthmapShader, treeX[i] - 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+			}
+			else {
+				DrawBirch(this->depthmapShader, treeX[i], -0.5, treeZ[i], 1.5, 10, 1.5);
+				DrawBirchLeaf(this->depthmapShader, treeX[i] - 1.5, 10, treeZ[i] - 1, 4.5, 5, 4.5);
+				DrawBirchLeaf(this->depthmapShader, treeX[i] + 1.5, 12.5, treeZ[i], 4.5, 5, 4.5);
+				DrawBirchLeaf(this->depthmapShader, treeX[i] + 3, 9.5, treeZ[i] + 1, 4.5, 5, 4.5);
+			}
 		}
 	}
 	
@@ -328,7 +330,7 @@ void Demo::Render() {
 	// ------------------------------------------------------
 	glViewport(0, 0, this->screenWidth, this->screenHeight);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	// Pass perspective projection matrix
 	UseShader(this->shadowmapShader);
@@ -350,14 +352,87 @@ void Demo::Render() {
 	glUniform1i(glGetUniformLocation(this->shadowmapShader, "diffuseTexture"), 0);
 	glUniform1i(glGetUniformLocation(this->shadowmapShader, "shadowMap"), 1);
 
-	// Light
-	DrawPinwheel(this->shadowmapShader, 0, lightPos.x, lightPos.y, lightPos.z, 1, 1, 1);
+	// Blending
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ZERO);
 
 	// Skybox
 	DrawSkybox(this->shadowmapShader);
 
+	// Light Source
+	DrawPinwheel(this->shadowmapShader, 0, lightPos.x, lightPos.y, lightPos.z, 1, 1, 1);
+
 	// Plane
 	DrawColoredPlane(this->shadowmapShader);
+
+	// Road
+	const int totalRoad = 3;
+	double roadX[totalRoad] = {};
+	double roadZ[totalRoad] = {};
+	double roadLength[totalRoad] = {};
+	string roadType[totalRoad] = {};
+	int turnType[totalRoad] = {};
+
+	roadX[0] = 0;
+	roadZ[0] = 0;
+	roadLength[0] = 5;
+	roadType[0] = "Vertical";
+
+	roadX[1] = -12;
+	roadZ[1] = -10;
+	roadLength[1] = 9;
+	roadType[1] = "Horizontal";
+
+	roadX[2] = 0;
+	roadZ[2] = -22;
+	roadType[2] = "Turn";
+	turnType[2] = 2;
+
+	for (int i = 0; i < totalRoad; i++) {
+		if (roadType[i] != "Turn") {
+			for (int j = 0; j < roadLength[i]; j++) {
+				if (roadType[i] == "Vertical") {
+					DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i] + (j * 3), 3, 0.1, 3);
+					DrawStone(this->shadowmapShader, roadX[i] + 3, -0.5, roadZ[i] + (j * 3), 3, 0.1, 3);
+					DrawStone(this->shadowmapShader, roadX[i] - 3, -0.5, roadZ[i] + (j * 3), 3, 0.1, 3);
+				}
+				else {
+					DrawCobble(this->shadowmapShader, roadX[i] + (j * 3), -0.5, roadZ[i], 3, 0.1, 3);
+					DrawStone(this->shadowmapShader, roadX[i] + (j * 3), -0.5, roadZ[i] + 3, 3, 0.1, 3);
+					DrawStone(this->shadowmapShader, roadX[i] + (j * 3), -0.5, roadZ[i] - 3, 3, 0.1, 3);
+				}
+			}
+		}
+		else {
+			DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i], 3, 0.1, 3);
+			if (turnType[i] == 1) {
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]-3, 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i]+3, -0.5, roadZ[i], 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]+3, 3, 0.1, 3);
+			}
+			else if (turnType[i] == 2) {
+				DrawCobble(this->shadowmapShader, roadX[i]+3, -0.5, roadZ[i], 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]+3, 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i]-3, -0.5, roadZ[i], 3, 0.1, 3);
+			}
+			else if (turnType[i] == 3) {
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]+3, 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i]-3, -0.5, roadZ[i], 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]-3, 3, 0.1, 3);
+			}
+			else if (turnType[i] == 4) {
+				DrawCobble(this->shadowmapShader, roadX[i]-3, -0.5, roadZ[i], 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i], -0.5, roadZ[i]-3, 3, 0.1, 3);
+				DrawCobble(this->shadowmapShader, roadX[i]+3, -0.5, roadZ[i], 3, 0.1, 3);
+			}
+
+			for (int j = 0; j < 3; j++) {
+				DrawStone(this->shadowmapShader, roadX[i], -0.5, roadZ[i] - 3 + (j * 3), 3, 0.1, 3);
+				DrawStone(this->shadowmapShader, roadX[i] + 3, -0.5, roadZ[i] - 3 + (j * 3), 3, 0.1, 3);
+				DrawStone(this->shadowmapShader, roadX[i] - 3, -0.5, roadZ[i] - 3 + (j * 3), 3, 0.1, 3);
+			}
+		}
+	}
 
 	// Pedestrian
 	DrawHead(this->shadowmapShader);
@@ -366,6 +441,10 @@ void Demo::Render() {
 	DrawHand(this->shadowmapShader, 2, -1.3, 4, 0);
 	DrawLeg(this->shadowmapShader, 1, -0.5, 1, 0);
 	DrawLeg(this->shadowmapShader, 2, 0.5, 1, 0);
+
+	if (blend) {
+		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+	}
 
 	// Windmill
 	DrawFoundation(this->shadowmapShader);
@@ -387,8 +466,8 @@ void Demo::Render() {
 
 	// Hedge
 	for (int i = 0; i < totalHedge; i++) {
-		DrawPinwheel(this->shadowmapShader, 0, hedgeX[i], 0, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
-		DrawHedge(this->shadowmapShader, hedgeX[i], 2.75, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
+		DrawPinwheel(this->shadowmapShader, 0, hedgeX[i], -0.25, hedgeZ[i], hedgeXSize[i], 0.5, hedgeZSize[i]);
+		DrawHedge(this->shadowmapShader, hedgeX[i], 2.5, hedgeZ[i], hedgeXSize[i], 5, hedgeZSize[i]);
 	}
 
 	// Lamp
@@ -415,13 +494,7 @@ void Demo::Render() {
 		}
 	}
 
-	/*
-	// Road
-	DrawCobble(0, -0.5, 0, 3, 0.1, 20);
-	DrawStone(3, -0.5, 0, 3, 0.1, 20);
-	DrawStone(-3, -0.5, 0, 3, 0.1, 20);
-	/**/
-
+	glDisable(GL_BLEND);
 	glDisable(GL_DEPTH_TEST);
 }
 
@@ -445,40 +518,40 @@ void Demo::BuildSkybox() {
 	float vertices[] = {
 		// format position, tex coords
 		// front
-		-0.5, -0.5, 0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1,  // 0
-		0.5, -0.5, 0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1,   // 1
-		0.5,  0.5, 0.5,  (2.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1,   // 2
-		-0.5,  0.5, 0.5, (1.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1,  // 3
+		-0.5, -0.5, 0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1,  // 0
+		0.5, -0.5, 0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1,   // 1
+		0.5,  0.5, 0.5,  (2.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1,   // 2
+		-0.5,  0.5, 0.5, (1.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1,  // 3
 
 		// right	
-		0.5, -0.5,  0.5, (2.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0,  // 4
-		0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0,  // 5
-		0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0,  // 6
-		0.5,  0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0,  // 7
+		0.5, -0.5,  0.5, (2.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0,  // 4
+		0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0,  // 5
+		0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0,  // 6
+		0.5,  0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0,  // 7
 
 		// back
-		-0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1, // 8 
-		0.5,  -0.5, -0.5, (4.0f / 4.0f), (1.0f / 3.0f), 0, 0, -1, // 9
-		0.5,   0.5, -0.5, (4.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1, // 10
-		-0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), 0, 0, -1, // 11
+		-0.5, -0.5, -0.5, (3.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1, // 8 
+		0.5,  -0.5, -0.5, (4.0f / 4.0f), (1.0f / 3.0f), 0, 0, 1, // 9
+		0.5,   0.5, -0.5, (4.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1, // 10
+		-0.5,  0.5, -0.5, (3.0f / 4.0f), (2.0f / 3.0f), 0, 0, 1, // 11
 
 		// left
-		-0.5, -0.5, -0.5, (0.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0, // 12
-		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), -1, 0, 0, // 13
-		-0.5,  0.5,  0.5, (1.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0, // 14
-		-0.5,  0.5, -0.5, (0.0f / 4.0f), (2.0f / 3.0f), -1, 0, 0, // 15
+		-0.5, -0.5, -0.5, (0.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0, // 12
+		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), 1, 0, 0, // 13
+		-0.5,  0.5,  0.5, (1.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0, // 14
+		-0.5,  0.5, -0.5, (0.0f / 4.0f), (2.0f / 3.0f), 1, 0, 0, // 15
 
 		// upper
-		0.5, 0.5,  0.5,  (1.0f / 4.0f), (2.0f / 3.0f),  0, 1, 0,  // 16
-		-0.5, 0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f),  0, 1, 0, // 17
-		-0.5, 0.5, -0.5, (2.0f / 4.0f), (3.0f / 3.0f),  0, 1, 0, // 18
-		0.5, 0.5, -0.5,  (1.0f / 4.0f), (3.0f / 3.0f),  0, 1, 0, // 19
+		0.5, 0.5,  0.5,  (1.0f / 4.0f), (2.0f / 3.0f),  0, -1, 0,  // 16
+		-0.5, 0.5,  0.5, (2.0f / 4.0f), (2.0f / 3.0f),  0, -1, 0, // 17
+		-0.5, 0.5, -0.5, (2.0f / 4.0f), (3.0f / 3.0f),  0, -1, 0, // 18
+		0.5, 0.5, -0.5,  (1.0f / 4.0f), (3.0f / 3.0f),  0, -1, 0, // 19
 
 		// bottom
-		-0.5, -0.5, -0.5, (1.0f / 4.0f), (0.0f / 3.0f), 0, -1, 0, // 20
-		0.5, -0.5, -0.5,  (2.0f / 4.0f), (0.0f / 3.0f), 0, -1, 0,  // 21
-		0.5, -0.5,  0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, -1, 0,  // 22
-		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, -1, 0, // 23
+		-0.5, -0.5, -0.5, (1.0f / 4.0f), (0.0f / 3.0f), 0, 1, 0, // 20
+		0.5, -0.5, -0.5,  (2.0f / 4.0f), (0.0f / 3.0f), 0, 1, 0,  // 21
+		0.5, -0.5,  0.5,  (2.0f / 4.0f), (1.0f / 3.0f), 0, 1, 0,  // 22
+		-0.5, -0.5,  0.5, (1.0f / 4.0f), (1.0f / 3.0f), 0, 1, 0, // 23
 	};
 
 	unsigned int indices[] = {
@@ -1524,7 +1597,7 @@ void Demo::DrawPinwheel(GLuint shader, int rotate, double positionX, double posi
 
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 
-	if (rotate == 1) {
+	if (rotate == 1 && !blend) {
 		model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
 	}
 
@@ -1652,9 +1725,11 @@ void Demo::DrawPropeller(GLuint shader, double positionX, double positionY, doub
 	glm::mat4 model;
 
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
-
-	model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
-
+	
+	if (!blend) {
+		model = glm::rotate(model, angle, glm::vec3(0, 0, 1));
+	}
+	
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
 
 	GLint modelLoc = glGetUniformLocation(shader, "model");
@@ -2285,199 +2360,158 @@ void Demo::DrawBirchLeaf(GLuint shader, double positionX, double positionY, doub
 	glBindVertexArray(0);
 }
 
-/*
 // Road Things
 void Demo::BuildCobble() {
-	// load image into texture memory
-	// ------------------------------
-	// Load and create a texture
 	glGenTextures(1, &texture_cobble);
 	glBindTexture(GL_TEXTURE_2D, texture_cobble);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 	int width, height;
 	unsigned char* image = SOIL_load_image("cobble.png", &width, &height, 0, SOIL_LOAD_RGBA);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	// set up vertex data (and buffer(s)) and configure vertex attributes
-	// ------------------------------------------------------------------
-	float vertices[] = {
+
+	//// Build geometry
+	GLfloat vertices[] = {
 		// format position, tex coords
-		// front
-		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 1, 0,   // 1
-		0.5,  0.5, 0.5, 1, 1,   // 2
-		-0.5,  0.5, 0.5, 0, 1,  // 3
-		// right
-		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 1, 0,  // 5
-		0.5, -0.5, -0.5, 1, 1,  // 6
-		0.5, -0.5,  0.5, 0, 1,  // 7
-		// back
-		-0.5, -0.5, -0.5, 0, 0, // 8
-		0.5,  -0.5, -0.5, 1, 0, // 9
-		0.5,   0.5, -0.5, 1, 1, // 10
-		-0.5,  0.5, -0.5, 0, 1, // 11
-		// left
-		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 1, 0, // 13
-		-0.5,  0.5,  0.5, 1, 1, // 14
-		-0.5,  0.5, -0.5, 0, 1, // 15
 		// upper
-		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 1, 0,  // 17
-		-0.5, 0.5, -0.5, 1, 5,  // 18
-		0.5, 0.5, -0.5, 0, 5,   // 19
-		// bottom
-		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 1, 0,  // 21
-		0.5, -0.5,  0.5, 1, 1,  // 22
-		-0.5, -0.5,  0.5, 0, 1, // 23
+		0.5, 0.5,  0.5, 0, 0,  0, 1, 0, // 16
+		-0.5, 0.5,  0.5, 1, 0, 0, 1, 0, // 17
+		-0.5, 0.5, -0.5, 1, 1, 0, 1, 0, // 18
+		0.5, 0.5, -0.5, 0, 1,  0, 1, 0, // 19
 	};
-	unsigned int indices[] = {
-		0,  1,  2,  0,  2,  3,   // front
-		4,  5,  6,  4,  6,  7,   // right
-		8,  9,  10, 8,  10, 11,  // back
-		12, 14, 13, 12, 15, 14,  // left
-		16, 18, 17, 16, 19, 18,  // upper
-		20, 22, 21, 20, 23, 22   // bottom
-	};
+
+	GLuint indices[] = { 0,  2,  1,  0,  3,  2 };
+
 	glGenVertexArrays(1, &VAO_road);
 	glGenBuffers(1, &VBO_road);
 	glGenBuffers(1, &EBO_road);
-	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+
 	glBindVertexArray(VAO_road);
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_road);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_road);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
 	glEnableVertexAttribArray(0);
-	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+
+	// TexCoord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
-	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-	glBindVertexArray(0);
-	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0); // Unbind VAO
 }
-void Demo::DrawCobble(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawCobble(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_cobble);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_road); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
+
 void Demo::BuildStone() {
-	// load image into texture memory
-	// ------------------------------
-	// Load and create a texture
 	glGenTextures(1, &texture_stone);
 	glBindTexture(GL_TEXTURE_2D, texture_stone);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
 	int width, height;
 	unsigned char* image = SOIL_load_image("stone.png", &width, &height, 0, SOIL_LOAD_RGBA);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	glGenerateMipmap(GL_TEXTURE_2D);
 	SOIL_free_image_data(image);
 	glBindTexture(GL_TEXTURE_2D, 0);
-	// set up vertex data (and buffer(s)) and configure vertex attributes
-	// ------------------------------------------------------------------
-	float vertices[] = {
+
+	//// Build geometry
+	GLfloat vertices[] = {
 		// format position, tex coords
-		// front
-		-0.5, -0.5, 0.5, 0, 0,  // 0
-		0.5, -0.5, 0.5, 1, 0,   // 1
-		0.5,  0.5, 0.5, 1, 1,   // 2
-		-0.5,  0.5, 0.5, 0, 1,  // 3
-		// right
-		0.5,  0.5,  0.5, 0, 0,  // 4
-		0.5,  0.5, -0.5, 1, 0,  // 5
-		0.5, -0.5, -0.5, 1, 1,  // 6
-		0.5, -0.5,  0.5, 0, 1,  // 7
-		// back
-		-0.5, -0.5, -0.5, 0, 0, // 8
-		0.5,  -0.5, -0.5, 1, 0, // 9
-		0.5,   0.5, -0.5, 1, 1, // 10
-		-0.5,  0.5, -0.5, 0, 1, // 11
-		// left
-		-0.5, -0.5, -0.5, 0, 0, // 12
-		-0.5, -0.5,  0.5, 1, 0, // 13
-		-0.5,  0.5,  0.5, 1, 1, // 14
-		-0.5,  0.5, -0.5, 0, 1, // 15
 		// upper
-		0.5, 0.5,  0.5, 0, 0,   // 16
-		-0.5, 0.5,  0.5, 1, 0,  // 17
-		-0.5, 0.5, -0.5, 1, 5,  // 18
-		0.5, 0.5, -0.5, 0, 5,   // 19
-		// bottom
-		-0.5, -0.5, -0.5, 0, 0, // 20
-		0.5, -0.5, -0.5, 1, 0,  // 21
-		0.5, -0.5,  0.5, 1, 1,  // 22
-		-0.5, -0.5,  0.5, 0, 1, // 23
+		0.5, 0.5,  0.5, 0, 0,  0, 1, 0, // 16
+		-0.5, 0.5,  0.5, 1, 0, 0, 1, 0, // 17
+		-0.5, 0.5, -0.5, 1, 1, 0, 1, 0, // 18
+		0.5, 0.5, -0.5, 0, 1,  0, 1, 0, // 19
 	};
-	unsigned int indices[] = {
-		0,  1,  2,  0,  2,  3,   // front
-		4,  5,  6,  4,  6,  7,   // right
-		8,  9,  10, 8,  10, 11,  // back
-		12, 14, 13, 12, 15, 14,  // left
-		16, 18, 17, 16, 19, 18,  // upper
-		20, 22, 21, 20, 23, 22   // bottom
-	};
+
+	GLuint indices[] = { 0,  2,  1,  0,  3,  2 };
+
 	glGenVertexArrays(1, &VAO_road);
 	glGenBuffers(1, &VBO_road);
 	glGenBuffers(1, &EBO_road);
-	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
+
 	glBindVertexArray(VAO_road);
+
 	glBindBuffer(GL_ARRAY_BUFFER, VBO_road);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_road);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-	// define position pointer layout 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(0 * sizeof(GLfloat)));
+
+	// Position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), 0);
 	glEnableVertexAttribArray(0);
-	// define texcoord pointer layout 1
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+
+	// TexCoord attribute
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
-	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	// You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-	// VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-	glBindVertexArray(0);
-	// remember: do NOT unbind the EBO while a VAO is active as the bound element buffer object IS stored in the VAO; keep the EBO bound.
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	// define Vector Normal pointer layout 1
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(5 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(2);
+
+	glBindVertexArray(0); // Unbind VAO
 }
-void Demo::DrawStone(double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
+void Demo::DrawStone(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ)
 {
-	glUseProgram(shaderProgram);
+	UseShader(shader);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture_stone);
-	glUniform1i(glGetUniformLocation(this->shaderProgram, "ourTexture"), 0);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+
 	glBindVertexArray(VAO_road); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+
 	glm::mat4 model;
 	model = glm::translate(model, glm::vec3(positionX, positionY, positionZ));
 	model = glm::scale(model, glm::vec3(scaleX, scaleY, scaleZ));
-	GLint modelLoc = glGetUniformLocation(this->shaderProgram, "model");
+	GLint modelLoc = glGetUniformLocation(shader, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBindVertexArray(0);
 }
-/**/
 
 // Camera Things
 void Demo::InitCamera()
