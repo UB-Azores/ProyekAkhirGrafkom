@@ -1,3 +1,4 @@
 ﻿C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(534,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (Lesson05.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   Demo.cpp
+D:\Documents\Naufal Aditya Rohendi\Kuliah\Semester 5\Grafika Komputer\Source Code\Grafika Komputer dan Visualisasi\vs\Lesson05\Demo.cpp(2972,21): warning C4305: '=': truncation from 'double' to 'float'
   Lesson05.vcxproj -> D:\Documents\Naufal Aditya Rohendi\Kuliah\Semester 5\Grafika Komputer\Source Code\Grafika Komputer dan Visualisasi\vs\Debug\ProyekGrafkom.exe

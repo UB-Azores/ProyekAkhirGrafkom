@@ -69,10 +69,12 @@ private:
 	void DrawHedge(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Lamp Things
-	GLuint texture_lamp;
+	GLuint texture_lamp, texture_glass;
 
 	void BuildLamp();
+	void BuildGlass();
 	void DrawLamp(GLuint shader, double positionX, double positionY, double positionZ);
+	void DrawGlass(GLuint shader, double positionX, double positionY, double positionZ, double scaleX, double scaleY, double scaleZ);
 
 	// Tree Things
 	GLuint	texture_darkOak, texture_birch, VBO_tree, VAO_tree, EBO_tree,
@@ -108,7 +110,8 @@ private:
 	bool kakiTanganGerak = false;
 
 	// Camera Things
-	float viewCamX, viewCamY, viewCamZ, upCamX, upCamY, upCamZ, posCamX, posCamY, posCamZ;
+	float	viewCamX, viewCamY, viewCamZ, posCamX, posCamY, posCamZ, upCamX, upCamY, upCamZ;
+	float camsNow = 1;
 	float CAMERA_SPEED, fovy;
 	void MoveCamera(float speed);
 	void StrafeCamera(float speed);
@@ -116,9 +119,9 @@ private:
 
 	// Shadow Things
 	GLuint depthmapShader, shadowmapShader, depthMapFBO, depthMap;
-	const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+	const unsigned int SHADOW_WIDTH = 1920, SHADOW_HEIGHT = 1920;
 	void BuildDepthMap();
 
-	// Blend Things
-	bool blend = false;
+	// Demo Things
+	float drawAll = 0;
 };
